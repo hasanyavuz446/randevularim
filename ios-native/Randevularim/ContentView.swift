@@ -23,6 +23,14 @@ struct ContentView: View {
 }
 
 private struct MainTabsView: View {
+    @Query(sort: \Appointment.dateTime) private var appointments: [Appointment]
+
+    private var widgetSignature: String {
+        appointments
+            .map { "\($0.id)|\($0.dateTime.timeIntervalSince1970)|\($0.durationMinutes)|\($0.customerName)|\($0.serviceName)|\($0.statusRaw)|\($0.totalPrice)" }
+            .joined(separator: "#")
+    }
+
     var body: some View {
         TabView {
             HomeView()
@@ -51,6 +59,12 @@ private struct MainTabsView: View {
                 }
         }
         .tint(AppTheme.primary)
+        .onAppear {
+            WidgetSnapshotStore.publish(appointments: appointments)
+        }
+        .onChange(of: widgetSignature) { _, _ in
+            WidgetSnapshotStore.publish(appointments: appointments)
+        }
     }
 }
 

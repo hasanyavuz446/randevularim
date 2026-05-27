@@ -3,6 +3,9 @@ import SwiftData
 import UserNotifications
 import Contacts
 import AppIntents
+#if canImport(WidgetKit)
+import WidgetKit
+#endif
 #if canImport(ActivityKit)
 import ActivityKit
 #endif
@@ -230,6 +233,51 @@ enum ContactImportService {
         }
         try context.save()
         return imported
+    }
+}
+
+struct WidgetAppointmentSnapshot: Codable, Equatable {
+    let generatedAt: Date
+    let todayCount: Int
+    let completedCount: Int
+    let totalRevenue: Double
+    let nextCustomerName: String
+    let nextServiceName: String
+    let nextDate: Date?
+
+    static let empty = WidgetAppointmentSnapshot(generatedAt: .now, todayCount: 0, completedCount: 0, totalRevenue: 0, nextCustomerName: "", nextServiceName: "", nextDate: nil)
+}
+
+enum WidgetSnapshotStore {
+    static let appGroupId = "group.com.hasanyavuz.randevularim"
+    static let snapshotKey = "widget.appointmentSnapshot"
+
+    @MainActor
+    static func publish(appointments: [Appointment]) {
+        let calendar = Calendar.current
+        let todayAppointments = appointments.filter { calendar.isDateInToday($0.dateTime) }
+        let activeUpcoming = appointments
+            .filter { $0.isActive && $0.dateTime >= .now }
+            .sorted { $0.dateTime < $1.dateTime }
+        let completedToday = todayAppointments.filter { $0.status == .completed }
+        let next = activeUpcoming.first
+        let snapshot = WidgetAppointmentSnapshot(
+            generatedAt: .now,
+            todayCount: todayAppointments.count,
+            completedCount: completedToday.count,
+            totalRevenue: completedToday.reduce(0) { $0 + $1.totalPrice },
+            nextCustomerName: next?.customerName ?? "",
+            nextServiceName: next?.serviceName ?? "",
+            nextDate: next?.dateTime
+        )
+
+        guard let data = try? JSONEncoder().encode(snapshot) else { return }
+        let defaults = UserDefaults(suiteName: appGroupId) ?? .standard
+        defaults.set(data, forKey: snapshotKey)
+
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadTimelines(ofKind: "RandevularimWidget")
+        #endif
     }
 }
 
