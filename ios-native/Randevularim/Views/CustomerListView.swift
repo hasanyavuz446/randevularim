@@ -4,21 +4,56 @@ import SwiftData
 struct CustomerListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Customer.name) private var customers: [Customer]
+    @Query(sort: \Appointment.dateTime) private var appointments: [Appointment]
     @State private var isShowingForm = false
+    @State private var appointmentCustomerId = ""
+    @State private var isShowingAppointmentForm = false
+    @State private var searchText = ""
+    @State private var pendingDeletion: Customer?
+
+    private var filteredCustomers: [Customer] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return customers }
+        return customers.filter {
+            $0.name.localizedCaseInsensitiveContains(query) ||
+                $0.phone.localizedCaseInsensitiveContains(query) ||
+                $0.serviceNotes.localizedCaseInsensitiveContains(query) ||
+                $0.generalNotes.localizedCaseInsensitiveContains(query)
+        }
+    }
 
     var body: some View {
         RandevularimScreen(title: "Müşteriler") {
             List {
-                ForEach(customers) { customer in
+                if filteredCustomers.isEmpty {
+                    ContentUnavailableView(
+                        searchText.isEmpty ? "Müşteri yok" : "Sonuç bulunamadı",
+                        systemImage: "person.crop.circle.badge.questionmark",
+                        description: Text(searchText.isEmpty ? "Yeni müşteri ekleyerek başlayın." : "Farklı bir arama deneyin.")
+                    )
+                    .listRowBackground(AppTheme.background)
+                }
+
+                ForEach(filteredCustomers) { customer in
                     NavigationLink {
                         CustomerDetailView(customer: customer)
                     } label: {
                         CustomerRow(customer: customer)
                     }
                     .listRowBackground(AppTheme.surface)
+                    .swipeActions(edge: .leading) {
+                        Button {
+                            appointmentCustomerId = customer.id
+                            isShowingAppointmentForm = true
+                        } label: {
+                            Label("Randevu", systemImage: "calendar.badge.plus")
+                        }
+                        .tint(AppTheme.primary)
+                    }
                 }
                 .onDelete(perform: deleteCustomers)
             }
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Müşteri ara")
             .scrollContentBackground(.hidden)
             .background(AppTheme.background)
             .toolbar {
@@ -33,13 +68,38 @@ struct CustomerListView: View {
             .sheet(isPresented: $isShowingForm) {
                 CustomerFormView()
             }
+            .sheet(isPresented: $isShowingAppointmentForm) {
+                AppointmentFormView(preselectedCustomerId: appointmentCustomerId)
+            }
+            .alert(item: $pendingDeletion) { customer in
+                let futureCount = futureAppointments(for: customer).count
+                return Alert(
+                    title: Text(futureCount > 0 ? "Gelecek Randevular Var" : "Müşteriyi Sil"),
+                    message: Text(futureCount > 0 ? "\(customer.name) için \(futureCount) gelecek randevu var. Müşteriyi silerseniz bu randevular da silinir." : "\(customer.name) silinsin mi?"),
+                    primaryButton: .destructive(Text("Sil")) {
+                        deleteCustomer(customer)
+                    },
+                    secondaryButton: .cancel(Text("Vazgeç"))
+                )
+            }
         }
     }
 
     private func deleteCustomers(at offsets: IndexSet) {
-        for index in offsets {
-            modelContext.delete(customers[index])
+        guard let index = offsets.first else { return }
+        pendingDeletion = filteredCustomers[index]
+    }
+
+    private func futureAppointments(for customer: Customer) -> [Appointment] {
+        appointments.filter { $0.customerId == customer.id && $0.dateTime >= .now && $0.status != .cancelled }
+    }
+
+    private func deleteCustomer(_ customer: Customer) {
+        for appointment in appointments where appointment.customerId == customer.id {
+            NotificationScheduler.cancel(for: appointment)
+            modelContext.delete(appointment)
         }
+        modelContext.delete(customer)
         try? modelContext.save()
     }
 }
@@ -68,8 +128,16 @@ private struct CustomerRow: View {
 
 private struct CustomerDetailView: View {
     @Environment(\.openURL) private var openURL
+    @Query(sort: \Appointment.dateTime) private var appointments: [Appointment]
     @Bindable var customer: Customer
     @State private var isShowingEdit = false
+    @State private var isShowingAppointmentForm = false
+
+    private var customerAppointments: [Appointment] {
+        appointments
+            .filter { $0.customerId == customer.id }
+            .sorted { $0.dateTime > $1.dateTime }
+    }
 
     var body: some View {
         List {
@@ -95,6 +163,9 @@ private struct CustomerDetailView: View {
                 Button("WhatsApp") {
                     openURL(URL(string: "whatsapp://send?phone=90\(customer.phone.filter(\.isNumber))")!)
                 }
+                Button("Bu Müşteriye Randevu Ekle") {
+                    isShowingAppointmentForm = true
+                }
             }
 
             Section("Notlar") {
@@ -109,6 +180,21 @@ private struct CustomerDetailView: View {
                     LabeledContent("Genel", value: customer.generalNotes)
                 }
             }
+
+            Section("Randevu Geçmişi (\(customerAppointments.count))") {
+                if customerAppointments.isEmpty {
+                    Text("Bu müşteri için randevu yok")
+                        .foregroundStyle(AppTheme.textSecondary)
+                } else {
+                    ForEach(customerAppointments) { appointment in
+                        NavigationLink {
+                            AppointmentDetailView(appointment: appointment)
+                        } label: {
+                            AppointmentListRow(appointment: appointment)
+                        }
+                    }
+                }
+            }
         }
         .navigationTitle("Müşteri")
         .toolbar {
@@ -118,6 +204,9 @@ private struct CustomerDetailView: View {
         }
         .sheet(isPresented: $isShowingEdit) {
             CustomerFormView(customer: customer)
+        }
+        .sheet(isPresented: $isShowingAppointmentForm) {
+            AppointmentFormView(preselectedCustomerId: customer.id)
         }
     }
 }
