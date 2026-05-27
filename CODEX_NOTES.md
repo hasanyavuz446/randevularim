@@ -122,6 +122,7 @@ Son kaynak durumunda:
 - `flutter test`: geçti.
 - `flutter analyze`: geçti.
 - 2026-05-28: `ios/Runner.xcodeproj/project.pbxproj` içindeki Runner `CURRENT_PROJECT_VERSION` değerleri `pubspec.yaml` ile uyumlu şekilde `9` yapıldı. `Info.plist` zaten `FLUTTER_BUILD_NUMBER=9` kullanıyordu.
+- 2026-05-28: Temiz SwiftUI rewrite için `ios-native/` altında ayrı native iOS uygulama iskeleti başlatıldı. Bundle ID `com.hasanyavuz.randevularim`, minimum iOS `16.6`, sürüm `1.0.0 (9)`. İlk SwiftUI tab yapısı, tema, örnek ana sayfa/randevu/müşteri/ayarlar ekranları ve temel domain modelleri eklendi. `xcodebuild -project ios-native/Randevularim.xcodeproj -scheme Randevularim -destination 'generic/platform=iOS' -derivedDataPath /private/tmp/randevularim_native_derived CODE_SIGNING_ALLOWED=NO build` başarılı geçti.
 
 Flutter komutlarını paralel çalıştırma; startup lock nedeniyle bazen `ios/Flutter/ephemeral/Packages/.packages` silme hatası veriyor. Böyle olursa komutu tek başına yeniden çalıştır.
 
