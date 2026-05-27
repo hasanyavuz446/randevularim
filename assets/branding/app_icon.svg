@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="background" x1="96" y1="44" x2="928" y2="980" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#222343"/>
+      <stop offset="0.48" stop-color="#14152B"/>
+      <stop offset="1" stop-color="#0D0D1A"/>
+    </linearGradient>
+    <radialGradient id="ambient" cx="50%" cy="30%" r="70%">
+      <stop offset="0" stop-color="#6E59E8" stop-opacity="0.3"/>
+      <stop offset="0.52" stop-color="#496ED9" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#496ED9" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="calendarFrame" x1="250" y1="210" x2="774" y2="810" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6685EC"/>
+      <stop offset="1" stop-color="#344EAE"/>
+    </linearGradient>
+    <linearGradient id="calendarFace" x1="276" y1="370" x2="748" y2="778" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#DFE8FF"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="426" y1="498" x2="667" y2="696" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ECD681"/>
+      <stop offset="1" stop-color="#C9A84C"/>
+    </linearGradient>
+    <filter id="frameShadow" x="160" y="150" width="704" height="754" filterUnits="userSpaceOnUse">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="34"/>
+      <feOffset dy="30"/>
+      <feColorMatrix values="0 0 0 0 0.04 0 0 0 0 0.04 0 0 0 0 0.11 0 0 0 0.6 0"/>
+      <feBlend in="SourceGraphic"/>
+    </filter>
+    <filter id="goldGlow" x="391" y="451" width="326" height="297" filterUnits="userSpaceOnUse">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="18"/>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="1024" fill="url(#background)"/>
+  <rect width="1024" height="1024" fill="url(#ambient)"/>
+
+  <g filter="url(#frameShadow)">
+    <rect x="238" y="218" width="548" height="582" rx="106" fill="url(#calendarFrame)"/>
+    <rect x="268" y="352" width="488" height="418" rx="72" fill="url(#calendarFace)"/>
+    <path d="M268 424H756V390C756 369.013 738.987 352 718 352H306C285.013 352 268 369.013 268 390V424Z" fill="#E5ECFF"/>
+  </g>
+
+  <rect x="350" y="183" width="52" height="144" rx="26" fill="#BFCBFA"/>
+  <rect x="622" y="183" width="52" height="144" rx="26" fill="#BFCBFA"/>
+  <circle cx="376" cy="295" r="16" fill="#30499F" opacity="0.8"/>
+  <circle cx="648" cy="295" r="16" fill="#30499F" opacity="0.8"/>
+
+  <path d="M509 696C581.902 696 641 636.902 641 564C641 491.098 581.902 432 509 432C436.098 432 377 491.098 377 564C377 636.902 436.098 696 509 696Z" fill="#C9A84C" opacity="0.22" filter="url(#goldGlow)"/>
+  <circle cx="512" cy="570" r="126" fill="url(#gold)"/>
+  <path d="M449 572L493 616L581 524" fill="none" stroke="#14152B" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
