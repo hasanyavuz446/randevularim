@@ -85,4 +85,9 @@ final class Appointment: Identifiable, Equatable {
     var isActive: Bool {
         status == .scheduled || status == .confirmed
     }
+
+    func overlaps(with start: Date, durationMinutes otherDuration: Int) -> Bool {
+        let otherEnd = start.addingTimeInterval(TimeInterval(otherDuration * 60))
+        return dateTime < otherEnd && endTime > start
+    }
 }

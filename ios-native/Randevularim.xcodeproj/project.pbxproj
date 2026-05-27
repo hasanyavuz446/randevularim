@@ -20,6 +20,8 @@
 		100000000000000000000111 /* AppointmentListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000211 /* AppointmentListView.swift */; };
 		100000000000000000000112 /* CustomerListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000212 /* CustomerListView.swift */; };
 		100000000000000000000113 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000213 /* SettingsView.swift */; };
+		100000000000000000000114 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000214 /* CalendarView.swift */; };
+		100000000000000000000115 /* StatisticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000215 /* StatisticsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +39,8 @@
 		100000000000000000000211 /* AppointmentListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppointmentListView.swift; sourceTree = "<group>"; };
 		100000000000000000000212 /* CustomerListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerListView.swift; sourceTree = "<group>"; };
 		100000000000000000000213 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		100000000000000000000214 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
+		100000000000000000000215 /* StatisticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -101,8 +105,10 @@
 			isa = PBXGroup;
 			children = (
 				100000000000000000000210 /* HomeView.swift */,
+				100000000000000000000214 /* CalendarView.swift */,
 				100000000000000000000211 /* AppointmentListView.swift */,
 				100000000000000000000212 /* CustomerListView.swift */,
+				100000000000000000000215 /* StatisticsView.swift */,
 				100000000000000000000213 /* SettingsView.swift */,
 			);
 			path = Views;
@@ -201,6 +207,8 @@
 				100000000000000000000111 /* AppointmentListView.swift in Sources */,
 				100000000000000000000112 /* CustomerListView.swift in Sources */,
 				100000000000000000000113 /* SettingsView.swift in Sources */,
+				100000000000000000000114 /* CalendarView.swift in Sources */,
+				100000000000000000000115 /* StatisticsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

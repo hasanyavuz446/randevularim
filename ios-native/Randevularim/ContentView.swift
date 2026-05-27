@@ -8,12 +8,17 @@ struct ContentView: View {
         TabView {
             HomeView()
                 .tabItem {
-                    Label("Ana Sayfa", systemImage: "house.fill")
+                    Label("Bugün", systemImage: "house.fill")
+                }
+
+            CalendarView()
+                .tabItem {
+                    Label("Takvim", systemImage: "calendar")
                 }
 
             AppointmentListView()
                 .tabItem {
-                    Label("Randevular", systemImage: "calendar")
+                    Label("Randevular", systemImage: "list.bullet")
                 }
 
             CustomerListView()
@@ -21,14 +26,15 @@ struct ContentView: View {
                     Label("Müşteriler", systemImage: "person.2.fill")
                 }
 
-            SettingsView()
+            StatisticsView()
                 .tabItem {
-                    Label("Ayarlar", systemImage: "gearshape.fill")
+                    Label("Raporlar", systemImage: "chart.bar.fill")
                 }
         }
         .tint(AppTheme.primary)
         .task {
             SeedDataService.seedIfNeeded(in: modelContext)
+            await NotificationScheduler.requestAuthorizationIfNeeded()
         }
     }
 }

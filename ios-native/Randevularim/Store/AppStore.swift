@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import UserNotifications
 
 enum SeedDataService {
     @MainActor
@@ -68,5 +69,66 @@ enum SeedDataService {
             )
         ]
         appointments.forEach(context.insert)
+    }
+}
+
+enum NotificationScheduler {
+    static func requestAuthorizationIfNeeded() async {
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        guard settings.authorizationStatus == .notDetermined else { return }
+        _ = try? await center.requestAuthorization(options: [.alert, .badge, .sound])
+    }
+
+    static func schedule(for appointment: Appointment) {
+        cancel(for: appointment)
+        guard appointment.notificationsEnabled || appointment.startNotificationEnabled else { return }
+
+        if appointment.startNotificationEnabled {
+            schedule(
+                id: startId(for: appointment),
+                title: "Randevu Başlıyor",
+                body: "\(appointment.customerName) - \(appointment.serviceName)",
+                date: appointment.dateTime
+            )
+        }
+
+        if appointment.notificationsEnabled, appointment.reminderMinutes > 0 {
+            let reminderDate = appointment.dateTime.addingTimeInterval(TimeInterval(-appointment.reminderMinutes * 60))
+            schedule(
+                id: reminderId(for: appointment),
+                title: "Randevu Hatırlatması",
+                body: "\(appointment.customerName) - \(appointment.serviceName) randevusuna \(appointment.reminderMinutes) dk kaldı.",
+                date: reminderDate
+            )
+        }
+    }
+
+    static func cancel(for appointment: Appointment) {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [
+            startId(for: appointment),
+            reminderId(for: appointment)
+        ])
+    }
+
+    private static func schedule(id: String, title: String, body: String, date: Date) {
+        guard date > .now else { return }
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+
+        let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
+        UNUserNotificationCenter.current().add(request)
+    }
+
+    private static func startId(for appointment: Appointment) -> String {
+        "appointment.\(appointment.id).start"
+    }
+
+    private static func reminderId(for appointment: Appointment) -> String {
+        "appointment.\(appointment.id).reminder"
     }
 }
