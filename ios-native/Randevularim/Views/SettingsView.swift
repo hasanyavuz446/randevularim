@@ -1,12 +1,19 @@
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Business.name) private var businesses: [Business]
     @Query(sort: \Service.sortOrder) private var services: [Service]
+    @Query(sort: \Appointment.dateTime) private var appointments: [Appointment]
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
     @State private var isShowingBusinessForm = false
     @State private var isShowingServiceForm = false
+    @State private var exportDocument: BackupDocument?
+    @State private var isShowingExporter = false
+    @State private var isShowingImporter = false
+    @State private var statusMessage: String?
 
     private var business: Business {
         businesses.first ?? Business.defaultBusiness()
@@ -47,11 +54,54 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Yedek") {
+                    Button("JSON Yedek Al") {
+                        do {
+                            exportDocument = BackupDocument(data: try BackupService.exportData(from: modelContext))
+                            isShowingExporter = true
+                        } catch {
+                            statusMessage = "Yedek alınamadı: \(error.localizedDescription)"
+                        }
+                    }
+
+                    Button("Yedekten Geri Yükle") {
+                        isShowingImporter = true
+                    }
+                }
+
+                Section("Rehber") {
+                    Button("Rehberden Müşteri Aktar") {
+                        Task {
+                            do {
+                                let count = try await ContactImportService.importContacts(into: modelContext)
+                                statusMessage = "\(count) müşteri aktarıldı."
+                            } catch {
+                                statusMessage = "Rehber aktarılamadı: \(error.localizedDescription)"
+                            }
+                        }
+                    }
+                }
+
                 Section("Native iOS") {
                     Label("Yerel bildirimler aktif", systemImage: "bell.badge.fill")
-                    Label("Live Activities hazırlığı", systemImage: "waveform.path.ecg")
-                    Label("WidgetKit hazırlığı", systemImage: "rectangle.grid.2x2")
-                    Label("Siri/App Intents hazırlığı", systemImage: "sparkles")
+                    Button("Sıradaki Randevuyu Live Activity Başlat") {
+                        startNextLiveActivity()
+                    }
+                    Label("WidgetKit veri temeli hazır", systemImage: "rectangle.grid.2x2")
+                    Label("Siri/App Intents aktif", systemImage: "sparkles")
+                }
+
+                Section("İlk Açılış") {
+                    Button("Onboarding'i Tekrar Göster") {
+                        hasCompletedOnboarding = false
+                    }
+                }
+
+                if let statusMessage {
+                    Section {
+                        Text(statusMessage)
+                            .foregroundStyle(AppTheme.textSecondary)
+                    }
                 }
             }
             .scrollContentBackground(.hidden)
@@ -62,6 +112,33 @@ struct SettingsView: View {
             .sheet(isPresented: $isShowingServiceForm) {
                 ServiceFormView()
             }
+            .fileExporter(
+                isPresented: $isShowingExporter,
+                document: exportDocument,
+                contentType: .json,
+                defaultFilename: "randevularim-yedek"
+            ) { result in
+                switch result {
+                case .success:
+                    statusMessage = "Yedek dışa aktarıldı."
+                case .failure(let error):
+                    statusMessage = "Yedek dışa aktarılamadı: \(error.localizedDescription)"
+                }
+            }
+            .fileImporter(isPresented: $isShowingImporter, allowedContentTypes: [.json]) { result in
+                do {
+                    let url = try result.get()
+                    guard url.startAccessingSecurityScopedResource() else {
+                        statusMessage = "Dosya erişimi alınamadı."
+                        return
+                    }
+                    defer { url.stopAccessingSecurityScopedResource() }
+                    try BackupService.restoreData(Data(contentsOf: url), into: modelContext)
+                    statusMessage = "Yedek geri yüklendi."
+                } catch {
+                    statusMessage = "Yedek geri yüklenemedi: \(error.localizedDescription)"
+                }
+            }
         }
     }
 
@@ -71,10 +148,41 @@ struct SettingsView: View {
         }
         try? modelContext.save()
     }
+
+    private func startNextLiveActivity() {
+        guard let appointment = appointments.first(where: { $0.dateTime >= .now && $0.isActive }) else {
+            statusMessage = "Başlatılacak gelecek randevu yok."
+            return
+        }
+        #if canImport(ActivityKit)
+        LiveActivityManager.start(for: appointment)
+        statusMessage = "Live Activity başlatma isteği gönderildi."
+        #else
+        statusMessage = "Live Activities bu platformda desteklenmiyor."
+        #endif
+    }
+}
+
+private struct BackupDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.json] }
+    var data: Data
+
+    init(data: Data) {
+        self.data = data
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        data = configuration.file.regularFileContents ?? Data()
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: data)
+    }
 }
 
 private struct BusinessFormView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     let business: Business
     @State private var name: String
     @State private var category: String
@@ -121,6 +229,7 @@ private struct BusinessFormView: View {
                         business.openingTime = openingTime
                         business.closingTime = closingTime
                         business.updatedAt = .now
+                        try? modelContext.save()
                         dismiss()
                     }
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
