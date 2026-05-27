@@ -312,17 +312,6 @@ struct RandevularimShortcuts: AppShortcutsProvider {
 }
 
 #if canImport(ActivityKit)
-struct AppointmentActivityAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
-        var customerName: String
-        var serviceName: String
-        var startDate: Date
-        var endDate: Date
-    }
-
-    var appointmentId: String
-}
-
 enum LiveActivityManager {
     static func start(for appointment: Appointment) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }

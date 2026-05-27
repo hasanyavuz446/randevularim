@@ -1,5 +1,8 @@
 import WidgetKit
 import SwiftUI
+#if canImport(ActivityKit)
+import ActivityKit
+#endif
 
 struct WidgetAppointmentSnapshot: Codable {
     let generatedAt: Date
@@ -148,9 +151,87 @@ struct RandevularimWidget: Widget {
     }
 }
 
+#if canImport(ActivityKit)
+struct RandevularimLiveActivity: Widget {
+    var body: some WidgetConfiguration {
+        ActivityConfiguration(for: AppointmentActivityAttributes.self) { context in
+            RandevularimLiveActivityView(state: context.state)
+                .activityBackgroundTint(Color(red: 0.05, green: 0.05, blue: 0.10))
+                .activitySystemActionForegroundColor(.yellow)
+        } dynamicIsland: { context in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) {
+                    Label(context.state.customerName, systemImage: "person.fill")
+                        .font(.caption.weight(.semibold))
+                        .lineLimit(1)
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    Text(context.state.startDate.formatted(date: .omitted, time: .shortened))
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.yellow)
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(context.state.serviceName)
+                            .font(.caption)
+                            .lineLimit(1)
+                        ProgressView(timerInterval: context.state.startDate...context.state.endDate, countsDown: false)
+                            .tint(.yellow)
+                    }
+                }
+            } compactLeading: {
+                Image(systemName: "calendar")
+                    .foregroundStyle(.yellow)
+            } compactTrailing: {
+                Text(context.state.startDate, style: .time)
+                    .font(.caption2.weight(.bold))
+            } minimal: {
+                Image(systemName: "calendar")
+                    .foregroundStyle(.yellow)
+            }
+        }
+    }
+}
+
+private struct RandevularimLiveActivityView: View {
+    let state: AppointmentActivityAttributes.ContentState
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("Sıradaki Randevu", systemImage: "calendar.badge.clock")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.yellow)
+                Spacer()
+                Text(state.startDate.formatted(date: .omitted, time: .shortened))
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(.white)
+            }
+
+            Text(state.customerName)
+                .font(.title3.weight(.bold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+
+            Text(state.serviceName)
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.72))
+                .lineLimit(1)
+
+            ProgressView(timerInterval: state.startDate...state.endDate, countsDown: false)
+                .tint(.yellow)
+        }
+        .padding()
+    }
+}
+#endif
+
 @main
 struct RandevularimWidgetBundle: WidgetBundle {
     var body: some Widget {
         RandevularimWidget()
+        #if canImport(ActivityKit)
+        RandevularimLiveActivity()
+        #endif
     }
 }

@@ -8,6 +8,8 @@ struct SettingsView: View {
     @Query(sort: \Service.sortOrder) private var services: [Service]
     @Query(sort: \Appointment.dateTime) private var appointments: [Appointment]
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
+    @AppStorage("globalNotificationsEnabled") private var globalNotificationsEnabled = true
+    @AppStorage("defaultReminderMinutes") private var defaultReminderMinutes = 30
     @State private var isShowingBusinessForm = false
     @State private var isShowingServiceForm = false
     @State private var exportDocument: BackupDocument?
@@ -82,8 +84,25 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Bildirimler") {
+                    Toggle(isOn: $globalNotificationsEnabled) {
+                        Label("Genel Bildirimler", systemImage: "bell.fill")
+                    }
+                    if globalNotificationsEnabled {
+                        Picker(selection: $defaultReminderMinutes) {
+                            Text("Tam zamanında").tag(0)
+                            Text("15 dk önce").tag(15)
+                            Text("30 dk önce").tag(30)
+                            Text("45 dk önce").tag(45)
+                            Text("1 sa önce").tag(60)
+                            Text("2 sa önce").tag(120)
+                        } label: {
+                            Label("Varsayılan Hatırlatma", systemImage: "timer")
+                        }
+                    }
+                }
+
                 Section("Native iOS") {
-                    Label("Yerel bildirimler aktif", systemImage: "bell.badge.fill")
                     Button("Sıradaki Randevuyu Live Activity Başlat") {
                         startNextLiveActivity()
                     }

@@ -24,6 +24,9 @@
 		100000000000000000000115 /* StatisticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000215 /* StatisticsView.swift */; };
 		100000000000000000000116 /* RandevularimWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000216 /* RandevularimWidget.swift */; };
 		100000000000000000000117 /* RandevularimWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 100000000000000000000002 /* RandevularimWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		100000000000000000000120 /* AppointmentActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000218 /* AppointmentActivityAttributes.swift */; };
+		100000000000000000000121 /* AppointmentActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000218 /* AppointmentActivityAttributes.swift */; };
+		100000000000000000000122 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000219 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,6 +73,8 @@
 		100000000000000000000215 /* StatisticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsView.swift; sourceTree = "<group>"; };
 		100000000000000000000216 /* RandevularimWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RandevularimWidget.swift; sourceTree = "<group>"; };
 		100000000000000000000217 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		100000000000000000000218 /* AppointmentActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppointmentActivityAttributes.swift; sourceTree = "<group>"; };
+		100000000000000000000219 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -78,6 +83,7 @@
 			children = (
 				100000000000000000000011 /* Randevularim */,
 				100000000000000000000012 /* RandevularimWidget */,
+				100000000000000000000013 /* Shared */,
 				100000000000000000000020 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -87,6 +93,7 @@
 			children = (
 				100000000000000000000201 /* RandevularimApp.swift */,
 				100000000000000000000202 /* ContentView.swift */,
+				100000000000000000000219 /* Assets.xcassets */,
 				100000000000000000000030 /* Models */,
 				100000000000000000000031 /* Theme */,
 				100000000000000000000032 /* Store */,
@@ -152,6 +159,14 @@
 				100000000000000000000217 /* Info.plist */,
 			);
 			path = RandevularimWidget;
+			sourceTree = "<group>";
+		};
+		100000000000000000000013 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000218 /* AppointmentActivityAttributes.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -237,6 +252,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				100000000000000000000122 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -286,6 +302,7 @@
 				100000000000000000000113 /* SettingsView.swift in Sources */,
 				100000000000000000000114 /* CalendarView.swift in Sources */,
 				100000000000000000000115 /* StatisticsView.swift in Sources */,
+				100000000000000000000120 /* AppointmentActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -294,6 +311,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				100000000000000000000116 /* RandevularimWidget.swift in Sources */,
+				100000000000000000000121 /* AppointmentActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -366,7 +384,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Randevularim/Randevularim.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 95584RK3B9;
 				ENABLE_PREVIEWS = YES;
@@ -397,13 +415,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Randevularim/Randevularim.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 95584RK3B9;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Randevularım";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
-				INFOPLIST_KEY_NSContactsUsageDescription = "Rehberinizdeki kişileri müşteri olarak ekleyebilmek için rehber erişimine ihtiyaç duyulmaktadır.";
+				INFOPLIST_KEY_NSContactsUsageDescription = "Rehberinizdeki kişileri müşteri olarak ekleyebilmek için rehber erişimine ihtiyaç duyulmaktadı.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -427,7 +445,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CODE_SIGN_ENTITLEMENTS = RandevularimWidget/RandevularimWidget.entitlements;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_TEAM = 95584RK3B9;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RandevularimWidget/Info.plist;
@@ -448,7 +466,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CODE_SIGN_ENTITLEMENTS = RandevularimWidget/RandevularimWidget.entitlements;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_TEAM = 95584RK3B9;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RandevularimWidget/Info.plist;

@@ -79,11 +79,7 @@ struct AppointmentListView: View {
 }
 
 private enum AppointmentListFilter: String, CaseIterable, Identifiable {
-    case upcoming
-    case today
-    case completed
-    case cancelled
-    case all
+    case upcoming, today, completed, cancelled, all
 
     var id: String { rawValue }
 
@@ -128,10 +124,8 @@ struct AppointmentListRow: View {
                     .padding(.vertical, 4)
                     .background(AppTheme.secondarySurface, in: Capsule())
             }
-
             Text(appointment.serviceName)
                 .foregroundStyle(AppTheme.textSecondary)
-
             Text(appointment.dateTime.formatted(date: .abbreviated, time: .shortened))
                 .font(.subheadline)
                 .foregroundStyle(AppTheme.accent)
@@ -139,12 +133,18 @@ struct AppointmentListRow: View {
     }
 }
 
+// MARK: - Detail
+
 struct AppointmentDetailView: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.modelContext) private var modelContext
     @Bindable var appointment: Appointment
+    @Query private var businesses: [Business]
     @State private var isShowingEdit = false
     @State private var confirmation: AppointmentConfirmation?
+    @State private var showWhatsAppSheet = false
+
+    private var businessName: String { businesses.first?.name ?? "İşletmem" }
 
     var body: some View {
         List {
@@ -172,42 +172,38 @@ struct AppointmentDetailView: View {
                     .onChange(of: appointment.startNotificationEnabled) { _, _ in persistAppointmentChange() }
                 Toggle("Hatırlatma", isOn: $appointment.notificationsEnabled)
                     .onChange(of: appointment.notificationsEnabled) { _, _ in persistAppointmentChange() }
-                LabeledContent("Hatırlatma Süresi", value: "\(appointment.reminderMinutes) dk önce")
+                if appointment.notificationsEnabled {
+                    LabeledContent("Hatırlatma Süresi", value: reminderLabel(appointment.reminderMinutes))
+                }
             }
 
             Section("Hızlı İşlemler") {
                 if appointment.status != .confirmed {
-                    Button("Randevuyu Teyit Et") {
-                        updateStatus(.confirmed)
-                    }
+                    Button("Randevuyu Teyit Et") { updateStatus(.confirmed) }
                 }
                 if appointment.status != .completed {
-                    Button("Tamamlandı Olarak İşaretle") {
-                        confirmation = .complete
-                    }
+                    Button("Tamamlandı Olarak İşaretle") { confirmation = .complete }
                 }
                 if appointment.status != .noShow {
-                    Button("Müşteri Gelmedi") {
-                        confirmation = .noShow
-                    }
-                    .foregroundStyle(AppTheme.warning)
+                    Button("Müşteri Gelmedi") { confirmation = .noShow }
+                        .foregroundStyle(AppTheme.warning)
                 }
                 if appointment.status != .cancelled {
-                    Button("Randevuyu İptal Et", role: .destructive) {
-                        confirmation = .cancel
-                    }
+                    Button("Randevuyu İptal Et", role: .destructive) { confirmation = .cancel }
                 }
             }
 
             Section("İletişim") {
-                Button("Ara") {
+                Button {
                     openURL(URL(string: "tel://\(appointment.customerPhone.filter(\.isNumber))")!)
+                } label: {
+                    Label("Ara", systemImage: "phone.fill")
                 }
-                Button("WhatsApp Yeni Randevu Mesajı") {
-                    openWhatsApp(message: "\(appointment.customerName), \(appointment.dateTime.formatted(date: .abbreviated, time: .shortened)) tarihli \(appointment.serviceName) randevunuz oluşturuldu.")
-                }
-                Button("WhatsApp Hatırlatma") {
-                    openWhatsApp(message: "\(appointment.customerName), \(appointment.dateTime.formatted(date: .abbreviated, time: .shortened)) tarihli \(appointment.serviceName) randevunuzu hatırlatırız.")
+
+                Button {
+                    showWhatsAppSheet = true
+                } label: {
+                    Label("WhatsApp", systemImage: "message.fill")
                 }
             }
 
@@ -217,30 +213,57 @@ struct AppointmentDetailView: View {
                 }
             }
         }
-        .navigationTitle("Randevu")
+        .navigationTitle("Randevu Detayı")
         .toolbar {
-            Button("Düzenle") {
-                isShowingEdit = true
-            }
+            Button("Düzenle") { isShowingEdit = true }
         }
         .sheet(isPresented: $isShowingEdit) {
             AppointmentFormView(appointment: appointment)
         }
-        .alert(item: $confirmation) { confirmation in
+        .confirmationDialog("WhatsApp Mesajı", isPresented: $showWhatsAppSheet, titleVisibility: .visible) {
+            Button("Yeni Randevu Mesajı") { sendWhatsApp(template: .newAppointment) }
+            Button("Randevu Hatırlatması") { sendWhatsApp(template: .reminder) }
+            Button("Vazgeç", role: .cancel) {}
+        } message: {
+            Text("Müşteriye gönderilecek mesaj tipini seçin.")
+        }
+        .alert(item: $confirmation) { conf in
             Alert(
-                title: Text(confirmation.title),
-                message: Text(confirmation.message),
-                primaryButton: .default(Text("Devam")) {
-                    updateStatus(confirmation.status)
-                },
+                title: Text(conf.title),
+                message: Text(conf.message),
+                primaryButton: .default(Text("Devam")) { updateStatus(conf.status) },
                 secondaryButton: .cancel(Text("Vazgeç"))
             )
         }
     }
 
-    private func openWhatsApp(message: String) {
+    private enum WhatsAppTemplate {
+        case newAppointment, reminder
+    }
+
+    private func sendWhatsApp(template: WhatsAppTemplate) {
+        let dateStr = appointment.dateTime.formatted(
+            .dateTime.day().month(.wide).locale(Locale(identifier: "tr_TR"))
+        )
+        let timeStr = appointment.dateTime.formatted(date: .omitted, time: .shortened)
+
+        let message: String
+        switch template {
+        case .newAppointment:
+            message = "Merhaba \(appointment.customerName), \(businessName) randevunuz \(dateStr) tarihinde saat \(timeStr) için oluşturulmuştur. Görüşmek üzere!"
+        case .reminder:
+            let weekdayStr = appointment.dateTime.formatted(
+                .dateTime.weekday(.wide).locale(Locale(identifier: "tr_TR"))
+            )
+            message = "Merhaba \(appointment.customerName), \(dateStr) \(weekdayStr) saat \(timeStr) randevunuz olduğunu hatırlatmak isteriz. Görüşmek üzere!"
+        }
+
+        let digits = appointment.customerPhone.filter(\.isNumber)
+        let normalized = digits.hasPrefix("0") ? "9\(digits)" : (digits.hasPrefix("90") ? digits : "90\(digits)")
         let encoded = message.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        openURL(URL(string: "whatsapp://send?phone=90\(appointment.customerPhone.filter(\.isNumber))&text=\(encoded)")!)
+        if let url = URL(string: "https://wa.me/\(normalized)?text=\(encoded)") {
+            openURL(url)
+        }
     }
 
     private func updateStatus(_ status: AppointmentStatus) {
@@ -252,12 +275,19 @@ struct AppointmentDetailView: View {
         try? modelContext.save()
         NotificationScheduler.schedule(for: appointment)
     }
+
+    private func reminderLabel(_ minutes: Int) -> String {
+        if minutes == 0 { return "Tam zamanında" }
+        if minutes < 60 { return "\(minutes) dk önce" }
+        if minutes == 1440 { return "1 gün önce" }
+        let hours = minutes / 60
+        let rem = minutes % 60
+        return rem == 0 ? "\(hours) sa önce" : "\(hours) sa \(rem) dk önce"
+    }
 }
 
 private enum AppointmentConfirmation: String, Identifiable {
-    case complete
-    case noShow
-    case cancel
+    case complete, noShow, cancel
 
     var id: String { rawValue }
 
@@ -286,6 +316,8 @@ private enum AppointmentConfirmation: String, Identifiable {
     }
 }
 
+// MARK: - Form
+
 struct AppointmentFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -305,12 +337,15 @@ struct AppointmentFormView: View {
     @State private var notificationsEnabled: Bool
     @State private var reminderMinutes: Int
     @State private var startNotificationEnabled: Bool
+    @State private var weeklyRepeatCount: Int
 
-    init(appointment: Appointment? = nil, preselectedCustomerId: String = "") {
+    private let repeatOptions = [1, 4, 8, 12]
+
+    init(appointment: Appointment? = nil, preselectedCustomerId: String = "", initialDate: Date = .now) {
         self.appointment = appointment
         _customerId = State(initialValue: appointment?.customerId ?? preselectedCustomerId)
         _selectedServiceIds = State(initialValue: Set(appointment?.serviceIds ?? []))
-        _dateTime = State(initialValue: appointment?.dateTime ?? .now)
+        _dateTime = State(initialValue: appointment?.dateTime ?? initialDate)
         _durationMinutes = State(initialValue: appointment?.durationMinutes ?? 30)
         _totalPrice = State(initialValue: appointment?.totalPrice ?? 0)
         _notes = State(initialValue: appointment?.notes ?? "")
@@ -318,15 +353,14 @@ struct AppointmentFormView: View {
         _notificationsEnabled = State(initialValue: appointment?.notificationsEnabled ?? true)
         _reminderMinutes = State(initialValue: appointment?.reminderMinutes ?? 30)
         _startNotificationEnabled = State(initialValue: appointment?.startNotificationEnabled ?? true)
+        _weeklyRepeatCount = State(initialValue: 1)
     }
 
     private var selectedCustomer: Customer? {
         customers.first { $0.id == customerId } ?? customers.first
     }
 
-    private var activeServices: [Service] {
-        services.filter(\.isActive)
-    }
+    private var activeServices: [Service] { services.filter(\.isActive) }
 
     private var selectedServices: [Service] {
         let selected = activeServices.filter { selectedServiceIds.contains($0.id) }
@@ -335,22 +369,21 @@ struct AppointmentFormView: View {
 
     private var hasConflict: Bool {
         appointments.contains { existing in
-            existing.id != appointment?.id && existing.status != .cancelled && existing.overlaps(with: dateTime, durationMinutes: durationMinutes)
+            existing.id != appointment?.id &&
+            existing.status != .cancelled &&
+            existing.overlaps(with: dateTime, durationMinutes: durationMinutes)
         }
     }
 
     private var isOutsideWorkingHours: Bool {
-        guard let business = businesses.first,
-              let opening = timeComponents(from: business.openingTime),
-              let closing = timeComponents(from: business.closingTime) else {
-            return false
-        }
-        let calendar = Calendar.current
-        let components = calendar.dateComponents([.hour, .minute], from: dateTime)
-        let startMinutes = (components.hour ?? 0) * 60 + (components.minute ?? 0)
-        let openingMinutes = opening.hour * 60 + opening.minute
-        let closingMinutes = closing.hour * 60 + closing.minute
-        return startMinutes < openingMinutes || startMinutes >= closingMinutes
+        guard let biz = businesses.first,
+              let opening = timeComponents(from: biz.openingTime),
+              let closing = timeComponents(from: biz.closingTime) else { return false }
+        let cal = Calendar.current
+        let h = cal.component(.hour, from: dateTime)
+        let m = cal.component(.minute, from: dateTime)
+        let start = h * 60 + m
+        return start < opening.hour * 60 + opening.minute || start >= closing.hour * 60 + closing.minute
     }
 
     var body: some View {
@@ -368,15 +401,13 @@ struct AppointmentFormView: View {
                                 Text(customer.name).tag(customer.id)
                             }
                         }
-
                         ForEach(activeServices) { service in
                             Button {
                                 toggleService(service)
                             } label: {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text(service.name)
-                                            .foregroundStyle(.primary)
+                                        Text(service.name).foregroundStyle(.primary)
                                         Text("\(service.durationMinutes) dk · \(service.price.formatted(.currency(code: "TRY").precision(.fractionLength(0))))")
                                             .font(.caption)
                                             .foregroundStyle(AppTheme.textSecondary)
@@ -403,6 +434,22 @@ struct AppointmentFormView: View {
                         }
                     }
 
+                    if appointment == nil {
+                        Section("Tekrar") {
+                            Picker("Tekrar", selection: $weeklyRepeatCount) {
+                                Text("Tek randevu").tag(1)
+                                Text("4 hafta boyunca tekrarla").tag(4)
+                                Text("8 hafta boyunca tekrarla").tag(8)
+                                Text("12 hafta boyunca tekrarla").tag(12)
+                            }
+                            if weeklyRepeatCount > 1 {
+                                Label("\(weeklyRepeatCount) randevu oluşturulacak", systemImage: "arrow.clockwise")
+                                    .foregroundStyle(AppTheme.accent)
+                                    .font(.caption)
+                            }
+                        }
+                    }
+
                     Section("Ücret ve Durum") {
                         TextField("Ücret", value: $totalPrice, format: .number)
                             .keyboardType(.decimalPad)
@@ -416,7 +463,9 @@ struct AppointmentFormView: View {
                     Section("Bildirim") {
                         Toggle("Başlangıç Bildirimi", isOn: $startNotificationEnabled)
                         Toggle("Hatırlatma", isOn: $notificationsEnabled)
-                        Stepper("\(reminderMinutes) dk önce", value: $reminderMinutes, in: 0...1440, step: 5)
+                        if notificationsEnabled {
+                            Stepper("\(reminderMinutes) dk önce", value: $reminderMinutes, in: 0...1440, step: 5)
+                        }
                     }
 
                     Section("Not") {
@@ -435,18 +484,16 @@ struct AppointmentFormView: View {
                 }
             }
             .onAppear {
-                if customerId.isEmpty {
-                    customerId = customers.first?.id ?? ""
-                }
-                if selectedServiceIds.isEmpty, let firstService = activeServices.first {
-                    selectedServiceIds = [firstService.id]
-                    applySelectedService()
+                if customerId.isEmpty { customerId = customers.first?.id ?? "" }
+                if selectedServiceIds.isEmpty, let first = activeServices.first {
+                    selectedServiceIds = [first.id]
+                    applySelectedServices()
                 }
             }
         }
     }
 
-    private func applySelectedService() {
+    private func applySelectedServices() {
         let selected = selectedServices
         guard !selected.isEmpty else { return }
         durationMinutes = selected.reduce(0) { $0 + $1.durationMinutes }
@@ -459,7 +506,7 @@ struct AppointmentFormView: View {
         } else {
             selectedServiceIds.insert(service.id)
         }
-        applySelectedService()
+        applySelectedServices()
     }
 
     private func save() {
@@ -468,6 +515,7 @@ struct AppointmentFormView: View {
         let serviceName = selected.map(\.name).joined(separator: " + ")
         let serviceColor = selected.first?.colorHex ?? "#5856D6"
         let serviceIds = selected.map(\.id)
+
         if let appointment {
             appointment.customerId = customer.id
             appointment.customerName = customer.name
@@ -483,32 +531,31 @@ struct AppointmentFormView: View {
             appointment.notificationsEnabled = notificationsEnabled
             appointment.reminderMinutes = reminderMinutes
             appointment.startNotificationEnabled = startNotificationEnabled
-        } else {
-            let newAppointment = Appointment(
-                customerId: customer.id,
-                customerName: customer.name,
-                customerPhone: customer.phone,
-                dateTime: dateTime,
-                durationMinutes: durationMinutes,
-                serviceIds: serviceIds,
-                serviceName: serviceName,
-                serviceColor: serviceColor,
-                notes: notes,
-                status: status,
-                totalPrice: totalPrice,
-                notificationsEnabled: notificationsEnabled,
-                reminderMinutes: reminderMinutes,
-                startNotificationEnabled: startNotificationEnabled
-            )
-            modelContext.insert(newAppointment)
-            NotificationScheduler.schedule(for: newAppointment)
             try? modelContext.save()
-            dismiss()
-            return
-        }
-        try? modelContext.save()
-        if let appointment {
             NotificationScheduler.schedule(for: appointment)
+        } else {
+            for week in 0..<weeklyRepeatCount {
+                guard let apptDate = Calendar.current.date(byAdding: .weekOfYear, value: week, to: dateTime) else { continue }
+                let newAppointment = Appointment(
+                    customerId: customer.id,
+                    customerName: customer.name,
+                    customerPhone: customer.phone,
+                    dateTime: apptDate,
+                    durationMinutes: durationMinutes,
+                    serviceIds: serviceIds,
+                    serviceName: serviceName,
+                    serviceColor: serviceColor,
+                    notes: notes,
+                    status: status,
+                    totalPrice: totalPrice,
+                    notificationsEnabled: notificationsEnabled,
+                    reminderMinutes: reminderMinutes,
+                    startNotificationEnabled: startNotificationEnabled
+                )
+                modelContext.insert(newAppointment)
+                NotificationScheduler.schedule(for: newAppointment)
+            }
+            try? modelContext.save()
         }
         dismiss()
     }
