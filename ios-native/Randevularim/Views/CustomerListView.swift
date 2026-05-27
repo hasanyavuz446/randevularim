@@ -1,12 +1,13 @@
 import SwiftUI
+import SwiftData
 
 struct CustomerListView: View {
-    @EnvironmentObject private var store: AppStore
+    @Query(sort: \Customer.name) private var customers: [Customer]
 
     var body: some View {
         RandevularimScreen(title: "Müşteriler") {
             List {
-                ForEach(store.customers) { customer in
+                ForEach(customers) { customer in
                     HStack(spacing: 12) {
                         Text(customer.initials)
                             .font(.headline)

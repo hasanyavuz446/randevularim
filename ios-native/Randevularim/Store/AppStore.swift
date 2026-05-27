@@ -1,50 +1,35 @@
 import Foundation
+import SwiftData
 
-@MainActor
-final class AppStore: ObservableObject {
-    @Published var business: Business
-    @Published var customers: [Customer]
-    @Published var services: [Service]
-    @Published var appointments: [Appointment]
+enum SeedDataService {
+    @MainActor
+    static func seedIfNeeded(in context: ModelContext) {
+        let businessCount = (try? context.fetchCount(FetchDescriptor<Business>())) ?? 0
+        if businessCount == 0 {
+            context.insert(Business.defaultBusiness())
+        }
 
-    init(
-        business: Business = .defaultBusiness(),
-        customers: [Customer] = [],
-        services: [Service] = Service.defaults,
-        appointments: [Appointment] = []
-    ) {
-        self.business = business
-        self.customers = customers
-        self.services = services
-        self.appointments = appointments
+        let serviceCount = (try? context.fetchCount(FetchDescriptor<Service>())) ?? 0
+        if serviceCount == 0 {
+            Service.defaults.forEach(context.insert)
+        }
+
+        let customerCount = (try? context.fetchCount(FetchDescriptor<Customer>())) ?? 0
+        if customerCount == 0 {
+            seedPreviewFlow(in: context)
+        }
+
+        try? context.save()
     }
 
-    var todayAppointments: [Appointment] {
-        appointments
-            .filter { Calendar.current.isDateInToday($0.dateTime) }
-            .sorted { $0.dateTime < $1.dateTime }
-    }
-
-    var upcomingAppointments: [Appointment] {
-        appointments
-            .filter { $0.dateTime >= .now && $0.isActive }
-            .sorted { $0.dateTime < $1.dateTime }
-    }
-
-    var completedRevenueToday: Double {
-        todayAppointments
-            .filter { $0.status == .completed }
-            .reduce(0) { $0 + $1.totalPrice }
-    }
-}
-
-extension AppStore {
-    static var preview: AppStore {
+    @MainActor
+    private static func seedPreviewFlow(in context: ModelContext) {
         let customers = [
             Customer(name: "Ayşe Demir", phone: "0555 111 22 33", serviceNotes: "Kısa görüşme tercih ediyor."),
             Customer(name: "Mehmet Kaya", phone: "0555 444 55 66"),
             Customer(name: "Zeynep Arslan", phone: "0555 777 88 99", generalNotes: "WhatsApp hatırlatma gönder.")
         ]
+        customers.forEach(context.insert)
 
         let appointments = [
             Appointment(
@@ -82,7 +67,6 @@ extension AppStore {
                 totalPrice: 120
             )
         ]
-
-        return AppStore(customers: customers, appointments: appointments)
+        appointments.forEach(context.insert)
     }
 }

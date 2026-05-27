@@ -1,19 +1,25 @@
 import SwiftUI
+import SwiftData
 
 struct SettingsView: View {
-    @EnvironmentObject private var store: AppStore
+    @Query(sort: \Business.name) private var businesses: [Business]
+    @Query(sort: \Service.sortOrder) private var services: [Service]
+
+    private var business: Business {
+        businesses.first ?? Business.defaultBusiness()
+    }
 
     var body: some View {
         RandevularimScreen(title: "Ayarlar") {
             List {
                 Section("İşletme") {
-                    LabeledContent("Ad", value: store.business.name)
-                    LabeledContent("Kategori", value: store.business.category)
-                    LabeledContent("Çalışma saatleri", value: "\(store.business.openingTime) - \(store.business.closingTime)")
+                    LabeledContent("Ad", value: business.name)
+                    LabeledContent("Kategori", value: business.category)
+                    LabeledContent("Çalışma saatleri", value: "\(business.openingTime) - \(business.closingTime)")
                 }
 
                 Section("Hizmetler") {
-                    ForEach(store.services) { service in
+                    ForEach(services) { service in
                         HStack {
                             Circle()
                                 .fill(service.color)

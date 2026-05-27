@@ -1,12 +1,14 @@
 import Foundation
+import SwiftData
 
-struct Customer: Identifiable, Equatable, Codable {
-    let id: String
+@Model
+final class Customer: Identifiable, Equatable {
+    @Attribute(.unique) var id: String
     var name: String
     var phone: String
     var serviceNotes: String
     var generalNotes: String
-    let createdAt: Date
+    var createdAt: Date
 
     init(
         id: String = UUID().uuidString,
@@ -22,6 +24,10 @@ struct Customer: Identifiable, Equatable, Codable {
         self.serviceNotes = serviceNotes
         self.generalNotes = generalNotes
         self.createdAt = createdAt
+    }
+
+    static func == (lhs: Customer, rhs: Customer) -> Bool {
+        lhs.id == rhs.id
     }
 
     var initials: String {

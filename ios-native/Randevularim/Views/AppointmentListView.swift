@@ -1,12 +1,13 @@
 import SwiftUI
+import SwiftData
 
 struct AppointmentListView: View {
-    @EnvironmentObject private var store: AppStore
+    @Query(sort: \Appointment.dateTime) private var appointments: [Appointment]
 
     var body: some View {
         RandevularimScreen(title: "Randevular") {
             List {
-                ForEach(store.appointments.sorted { $0.dateTime < $1.dateTime }) { appointment in
+                ForEach(appointments) { appointment in
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
                             Text(appointment.customerName)

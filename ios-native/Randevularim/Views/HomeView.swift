@@ -1,7 +1,31 @@
 import SwiftUI
+import SwiftData
 
 struct HomeView: View {
-    @EnvironmentObject private var store: AppStore
+    @Query(sort: \Business.name) private var businesses: [Business]
+    @Query(sort: \Appointment.dateTime) private var appointments: [Appointment]
+
+    private var business: Business {
+        businesses.first ?? Business.defaultBusiness()
+    }
+
+    private var todayAppointments: [Appointment] {
+        appointments
+            .filter { Calendar.current.isDateInToday($0.dateTime) }
+            .sorted { $0.dateTime < $1.dateTime }
+    }
+
+    private var upcomingAppointments: [Appointment] {
+        appointments
+            .filter { $0.dateTime >= .now && $0.isActive }
+            .sorted { $0.dateTime < $1.dateTime }
+    }
+
+    private var completedRevenueToday: Double {
+        todayAppointments
+            .filter { $0.status == .completed }
+            .reduce(0) { $0 + $1.totalPrice }
+    }
 
     var body: some View {
         RandevularimScreen(title: "Randevularım") {
@@ -10,19 +34,19 @@ struct HomeView: View {
                     businessHeader
 
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                        MetricTile(title: "Bugün planlanan", value: "\(store.todayAppointments.count)", systemImage: "calendar.badge.clock", tint: AppTheme.primary)
-                        MetricTile(title: "Bugünkü ciro", value: currency(store.completedRevenueToday), systemImage: "chart.line.uptrend.xyaxis", tint: AppTheme.accent)
+                        MetricTile(title: "Bugün planlanan", value: "\(todayAppointments.count)", systemImage: "calendar.badge.clock", tint: AppTheme.primary)
+                        MetricTile(title: "Bugünkü ciro", value: currency(completedRevenueToday), systemImage: "chart.line.uptrend.xyaxis", tint: AppTheme.accent)
                     }
 
                     appointmentSection(
                         title: "Bugünün Programı",
-                        appointments: store.todayAppointments,
+                        appointments: todayAppointments,
                         emptyText: "Bugün randevu yok"
                     )
 
                     appointmentSection(
                         title: "Sıradaki Diğer Randevular",
-                        appointments: Array(store.upcomingAppointments.dropFirst(store.todayAppointments.count).prefix(3)),
+                        appointments: Array(upcomingAppointments.filter { !Calendar.current.isDateInToday($0.dateTime) }.prefix(3)),
                         emptyText: "Gelecek randevu bulunmuyor"
                     )
                 }
@@ -43,7 +67,7 @@ struct HomeView: View {
             .frame(width: 56, height: 56)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(store.business.name)
+                Text(business.name)
                     .font(.title2.bold())
                     .foregroundStyle(.white)
                 Text("Profesyonel randevu yönetimi")

@@ -1,14 +1,23 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct RandevularimApp: App {
-    @StateObject private var store = AppStore.preview
+    let container: ModelContainer
+
+    init() {
+        do {
+            container = try ModelContainer(for: Business.self, Customer.self, Service.self, Appointment.self)
+        } catch {
+            fatalError("SwiftData container olusturulamadi: \(error)")
+        }
+    }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environmentObject(store)
                 .preferredColorScheme(.dark)
         }
+        .modelContainer(container)
     }
 }

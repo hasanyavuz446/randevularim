@@ -1,13 +1,15 @@
 import SwiftUI
+import SwiftData
 
-struct Service: Identifiable, Equatable, Codable {
-    let id: String
+@Model
+final class Service: Identifiable, Equatable {
+    @Attribute(.unique) var id: String
     var name: String
     var durationMinutes: Int
     var colorHex: String
     var sortOrder: Int
     var price: Double
-    var description: String
+    var serviceDescription: String
     var isActive: Bool
 
     var color: Color { Color(hex: colorHex) }
@@ -19,7 +21,7 @@ struct Service: Identifiable, Equatable, Codable {
         colorHex: String,
         sortOrder: Int,
         price: Double = 0,
-        description: String = "",
+        serviceDescription: String = "",
         isActive: Bool = true
     ) {
         self.id = id
@@ -28,8 +30,12 @@ struct Service: Identifiable, Equatable, Codable {
         self.colorHex = colorHex
         self.sortOrder = sortOrder
         self.price = price
-        self.description = description
+        self.serviceDescription = serviceDescription
         self.isActive = isActive
+    }
+
+    static func == (lhs: Service, rhs: Service) -> Bool {
+        lhs.id == rhs.id
     }
 
     static let defaults: [Service] = [
