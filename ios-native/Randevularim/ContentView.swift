@@ -1,14 +1,19 @@
 import SwiftUI
 import SwiftData
+#if canImport(ActivityKit)
+import ActivityKit
+#endif
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("themeVersion") private var themeVersion = 0
 
     var body: some View {
         Group {
             if hasCompletedOnboarding {
                 MainTabsView()
+                    .id(themeVersion)
             } else {
                 OnboardingView {
                     hasCompletedOnboarding = true
@@ -24,6 +29,13 @@ struct ContentView: View {
 
 private struct MainTabsView: View {
     @Query(sort: \Appointment.dateTime) private var appointments: [Appointment]
+    @AppStorage("activeTabIndex") private var activeTabIndex = 0
+
+    private func syncLiveActivities() {
+        #if canImport(ActivityKit)
+        LiveActivityManager.checkAndSync(appointments: appointments)
+        #endif
+    }
 
     private var widgetSignature: String {
         appointments
@@ -32,38 +44,40 @@ private struct MainTabsView: View {
     }
 
     var body: some View {
-        TabView {
+        TabView(selection: $activeTabIndex) {
             HomeView()
-                .tabItem {
-                    Label("Bugün", systemImage: "house.fill")
-                }
+                .tabItem { Label("Bugün", systemImage: "house.fill") }
+                .tag(0)
 
             CalendarView()
-                .tabItem {
-                    Label("Takvim", systemImage: "calendar")
-                }
+                .tabItem { Label("Takvim", systemImage: "calendar") }
+                .tag(1)
 
             AppointmentListView()
-                .tabItem {
-                    Label("Randevular", systemImage: "list.bullet")
-                }
+                .tabItem { Label("Randevular", systemImage: "list.bullet") }
+                .tag(2)
 
             CustomerListView()
-                .tabItem {
-                    Label("Müşteriler", systemImage: "person.2.fill")
-                }
+                .tabItem { Label("Müşteriler", systemImage: "person.2.fill") }
+                .tag(3)
 
             StatisticsView()
-                .tabItem {
-                    Label("Raporlar", systemImage: "chart.bar.fill")
-                }
+                .tabItem { Label("Raporlar", systemImage: "chart.bar.fill") }
+                .tag(4)
         }
         .tint(AppTheme.primary)
         .onAppear {
             WidgetSnapshotStore.publish(appointments: appointments)
+            syncLiveActivities()
         }
         .onChange(of: widgetSignature) { _, _ in
             WidgetSnapshotStore.publish(appointments: appointments)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            syncLiveActivities()
+        }
+        .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { _ in
+            syncLiveActivities()
         }
     }
 }

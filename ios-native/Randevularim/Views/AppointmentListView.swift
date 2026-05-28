@@ -269,6 +269,11 @@ struct AppointmentDetailView: View {
     private func updateStatus(_ status: AppointmentStatus) {
         appointment.status = status
         persistAppointmentChange()
+        if status == .completed || status == .cancelled || status == .noShow {
+            #if canImport(ActivityKit)
+            LiveActivityManager.end(for: appointment)
+            #endif
+        }
     }
 
     private func persistAppointmentChange() {
@@ -338,8 +343,7 @@ struct AppointmentFormView: View {
     @State private var reminderMinutes: Int
     @State private var startNotificationEnabled: Bool
     @State private var weeklyRepeatCount: Int
-
-    private let repeatOptions = [1, 4, 8, 12]
+    @State private var isShowingCustomerPicker = false
 
     init(appointment: Appointment? = nil, preselectedCustomerId: String = "", initialDate: Date = .now) {
         self.appointment = appointment
@@ -357,7 +361,7 @@ struct AppointmentFormView: View {
     }
 
     private var selectedCustomer: Customer? {
-        customers.first { $0.id == customerId } ?? customers.first
+        customers.first { $0.id == customerId }
     }
 
     private var activeServices: [Service] { services.filter(\.isActive) }
@@ -395,17 +399,44 @@ struct AppointmentFormView: View {
                             .foregroundStyle(AppTheme.textSecondary)
                     }
                 } else {
-                    Section("Müşteri ve Hizmet") {
-                        Picker("Müşteri", selection: $customerId) {
-                            ForEach(customers) { customer in
-                                Text(customer.name).tag(customer.id)
+                    Section("Müşteri") {
+                        Button {
+                            isShowingCustomerPicker = true
+                        } label: {
+                            HStack {
+                                if let customer = selectedCustomer {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(customer.name)
+                                            .foregroundStyle(.primary)
+                                        if !customer.phone.isEmpty {
+                                            Text(customer.phone)
+                                                .font(.caption)
+                                                .foregroundStyle(AppTheme.textSecondary)
+                                        }
+                                    }
+                                } else {
+                                    Text("Müşteri Seç")
+                                        .foregroundStyle(AppTheme.textSecondary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundStyle(AppTheme.textSecondary)
                             }
+                            .contentShape(Rectangle())
                         }
+                        .buttonStyle(.plain)
+                    }
+
+                    Section("Hizmetler") {
                         ForEach(activeServices) { service in
                             Button {
                                 toggleService(service)
                             } label: {
-                                HStack {
+                                HStack(spacing: 12) {
+                                    Circle()
+                                        .fill(Color(hex: service.colorHex))
+                                        .frame(width: 10, height: 10)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(service.name).foregroundStyle(.primary)
                                         Text("\(service.durationMinutes) dk · \(service.price.formatted(.currency(code: "TRY").precision(.fractionLength(0))))")
@@ -414,8 +445,10 @@ struct AppointmentFormView: View {
                                     }
                                     Spacer()
                                     Image(systemName: selectedServiceIds.contains(service.id) ? "checkmark.circle.fill" : "circle")
+                                        .font(.title3)
                                         .foregroundStyle(selectedServiceIds.contains(service.id) ? AppTheme.primary : AppTheme.textSecondary)
                                 }
+                                .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                         }
@@ -480,7 +513,7 @@ struct AppointmentFormView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Kaydet", action: save)
-                        .disabled(customers.isEmpty || services.isEmpty)
+                        .disabled(customers.isEmpty || services.isEmpty || selectedCustomer == nil)
                 }
             }
             .onAppear {
@@ -489,6 +522,9 @@ struct AppointmentFormView: View {
                     selectedServiceIds = [first.id]
                     applySelectedServices()
                 }
+            }
+            .sheet(isPresented: $isShowingCustomerPicker) {
+                CustomerPickerSheet(customers: customers, selectedId: $customerId)
             }
         }
     }
@@ -564,5 +600,69 @@ struct AppointmentFormView: View {
         let parts = value.split(separator: ":").compactMap { Int($0) }
         guard parts.count == 2 else { return nil }
         return (parts[0], parts[1])
+    }
+}
+
+// MARK: - Customer Picker Sheet
+
+private struct CustomerPickerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let customers: [Customer]
+    @Binding var selectedId: String
+    @State private var searchText = ""
+
+    private var filtered: [Customer] {
+        let q = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !q.isEmpty else { return customers }
+        return customers.filter {
+            $0.name.localizedCaseInsensitiveContains(q) ||
+            $0.phone.localizedCaseInsensitiveContains(q)
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if filtered.isEmpty {
+                    ContentUnavailableView("Sonuç bulunamadı", systemImage: "person.crop.circle.badge.questionmark")
+                        .listRowBackground(AppTheme.background)
+                } else {
+                    ForEach(filtered) { customer in
+                        Button {
+                            selectedId = customer.id
+                            dismiss()
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(customer.name).font(.headline)
+                                    if !customer.phone.isEmpty {
+                                        Text(customer.phone)
+                                            .font(.subheadline)
+                                            .foregroundStyle(AppTheme.textSecondary)
+                                    }
+                                }
+                                Spacer()
+                                if selectedId == customer.id {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(AppTheme.primary)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .listRowBackground(AppTheme.surface)
+                    }
+                }
+            }
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "İsim veya telefon ara")
+            .scrollContentBackground(.hidden)
+            .background(AppTheme.background)
+            .navigationTitle("Müşteri Seç")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Vazgeç") { dismiss() }
+                }
+            }
+        }
     }
 }

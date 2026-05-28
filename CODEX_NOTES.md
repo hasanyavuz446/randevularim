@@ -132,6 +132,31 @@ Son kaynak durumunda:
 
 Flutter komutlarını paralel çalıştırma; startup lock nedeniyle bazen `ios/Flutter/ephemeral/Packages/.packages` silme hatası veriyor. Böyle olursa komutu tek başına yeniden çalıştır.
 
+## Native iOS Özellik Durumu (2026-05-28)
+
+Flutter parity + üzeri tamamlandı:
+- **Takvim**: Gün (saatlik timeline), Hafta (7-gün agenda), Ay (ızgara) görünümleri; Bugün butonu
+- **Tekrarlayan randevular**: Form'da 4/8/12 hafta seçeneği; her hafta için ayrı Appointment nesnesi oluşturuluyor
+- **WhatsApp şablonları**: İşletme adı, Türkçe tarih, `wa.me` URL'si; Yeni Randevu ve Hatırlatma şablonları
+- **İstatistik period filtresi**: Bugün/Bu Hafta/Bu Ay segmenti; randevu sayısı + ciro filtreli
+- **Global bildirim ayarları**: Ayarlar'da toggle + varsayılan hatırlatma süresi (AppStorage)
+- **Live Activity**: Otomatik tetikleme — uygulama açıkken her 60 sn + `didBecomeActive`'de kontrol; randevu saati gelince başlar, biter/iptal olunca kapanır; Dynamic Island destekli
+- **Uygulama ikonları**: Assets.xcassets eklendi
+- **Tema seçici**: Ayarlar'da 8 tema (Flutter eşdeğeri renk paleti); anında uygulama
+- **Açık/Koyu/Otomatik mod**: Açık modda iOS sistem arka plan renkleri; Koyu'da tema hex renkleri
+- **Hero Card (Ana Sayfa)**: Sıradaki aktif randevu büyük gradient kartta; telefon + WhatsApp aksiyonları
+- **Müşteri arama (Randevu Formu)**: Picker yerine arama + filtreleme sheet'i
+- **Hizmet seçimi iyileştirmesi**: Müşteri ve hizmet sekmeleri ayrı; satırın tamamı tıklanabilir
+- **Hizmet yönetimi**: Ayarlar'dan ayrı sayfada sürükle-sırala + düzenle
+- **Rehberden aktarma**: İzin durumu kontrolü; reddedildiyse Ayarlar'a deeplink
+- **Demo veri kaldırıldı**: İlk açılışta sahte müşteri/randevu yok; sadece işletme + 6 varsayılan hizmet
+- **Veri sıfırlama**: Ayarlar'da "Tüm Verileri Sıfırla" butonu (onay dialoglu)
+
+### Karşılaştırma Kurulumu (Geçici)
+- `com.hasanyavuz.randevularim` → Native SwiftUI "Randevularım" (son build)
+- `com.hasanyavuz.randevularimold` → Flutter "oldRandevularım" (karşılaştırma amaçlı)
+- `com.hasanyavuz.randevularim2` → Silinebilir (eski test build)
+
 ## Sonraki Olası Adım
 
 Kullanıcı birkaç değişiklik daha yaptıktan sonra yeni build isteyebilir. O zaman:

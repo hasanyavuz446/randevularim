@@ -18,8 +18,23 @@ struct CalendarView: View {
     private var openingHour: Int {
         Int(businesses.first?.openingTime.split(separator: ":").first ?? "8") ?? 8
     }
-    private var closingHour: Int {
-        (Int(businesses.first?.closingTime.split(separator: ":").first ?? "19") ?? 19) + 1
+
+    // Haftalık şerit: selectedDate'in bulunduğu haftanın Pazartesi'si
+    private var weekMonday: Date {
+        let cal = Calendar.current
+        let weekday = cal.component(.weekday, from: selectedDate)
+        let offset = weekday == 1 ? -6 : -(weekday - 2)
+        return cal.date(byAdding: .day, value: offset, to: selectedDate) ?? selectedDate
+    }
+
+    private var weekDays: [Date] {
+        (0..<7).compactMap { Calendar.current.date(byAdding: .day, value: $0, to: weekMonday) }
+    }
+
+    private func navigateWeek(_ delta: Int) {
+        if let d = Calendar.current.date(byAdding: .weekOfYear, value: delta, to: selectedDate) {
+            selectedDate = d
+        }
     }
 
     var body: some View {
@@ -30,18 +45,18 @@ struct CalendarView: View {
                 Group {
                     switch mode {
                     case .day:
-                        DayTimelineView(
-                            date: selectedDate,
-                            appointments: appointmentsForDay(selectedDate),
-                            openingHour: openingHour,
-                            closingHour: closingHour
-                        )
+                        VStack(spacing: 0) {
+                            dayWeekStrip
+                            DayTimelineView(
+                                date: selectedDate,
+                                appointments: appointmentsForDay(selectedDate),
+                                scrollToHour: openingHour
+                            )
+                        }
                     case .week:
                         WeekAgendaView(anchorDate: selectedDate, appointments: appointments)
                     case .month:
-                        MonthCalendarView(selectedDate: $selectedDate, appointments: appointments) {
-                            mode = .day
-                        }
+                        MonthCalendarView(selectedDate: $selectedDate, appointments: appointments)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -76,6 +91,89 @@ struct CalendarView: View {
         .background(AppTheme.surface)
     }
 
+    // Flutter benzeri haftalık gün şeridi
+    private var dayWeekStrip: some View {
+        let cal = Calendar.current
+        let trLocale = Locale(identifier: "tr_TR")
+        return VStack(spacing: 0) {
+            // Ay/yıl + hafta navigasyonu
+            HStack {
+                Button { navigateWeek(-1) } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(AppTheme.primary)
+                        .frame(width: 40, height: 36)
+                        .contentShape(Rectangle())
+                }
+                Spacer()
+                Text(selectedDate.formatted(.dateTime.year().month(.wide).locale(trLocale)))
+                    .font(.headline)
+                Spacer()
+                Button { navigateWeek(1) } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(AppTheme.primary)
+                        .frame(width: 40, height: 36)
+                        .contentShape(Rectangle())
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.top, 6)
+
+            // Gün adları satırı
+            HStack(spacing: 0) {
+                ForEach(weekDays, id: \.self) { day in
+                    Text(day.formatted(.dateTime.weekday(.abbreviated).locale(trLocale)))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(AppTheme.textSecondary)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            .padding(.top, 4)
+
+            // Gün sayıları satırı
+            HStack(spacing: 0) {
+                ForEach(weekDays, id: \.self) { day in
+                    let isSelected = cal.isDate(day, inSameDayAs: selectedDate)
+                    let isToday = cal.isDateInToday(day)
+                    let hasAppt = appointments.contains { cal.isDate($0.dateTime, inSameDayAs: day) && $0.isActive }
+
+                    Button { selectedDate = day } label: {
+                        VStack(spacing: 3) {
+                            Text("\(cal.component(.day, from: day))")
+                                .font(.system(size: 16, weight: isToday || isSelected ? .bold : .regular))
+                                .foregroundStyle(isSelected ? .white : isToday ? AppTheme.primary : .primary)
+                                .frame(width: 34, height: 34)
+                                .background {
+                                    if isSelected {
+                                        Circle().fill(AppTheme.primary)
+                                    } else if isToday {
+                                        Circle().strokeBorder(AppTheme.primary, lineWidth: 1.5)
+                                    }
+                                }
+                            Circle()
+                                .fill(hasAppt ? (isSelected ? .white.opacity(0.8) : AppTheme.primary) : .clear)
+                                .frame(width: 5, height: 5)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.bottom, 8)
+        }
+        .background(AppTheme.surface)
+        .gesture(
+            DragGesture(minimumDistance: 40, coordinateSpace: .local)
+                .onEnded { value in
+                    if abs(value.translation.width) > abs(value.translation.height) {
+                        navigateWeek(value.translation.width < 0 ? 1 : -1)
+                    }
+                }
+        )
+    }
+
     private func appointmentsForDay(_ date: Date) -> [Appointment] {
         appointments.filter { Calendar.current.isDate($0.dateTime, inSameDayAs: date) }
             .sorted { $0.dateTime < $1.dateTime }
@@ -87,35 +185,44 @@ struct CalendarView: View {
 private struct DayTimelineView: View {
     let date: Date
     let appointments: [Appointment]
-    let openingHour: Int
-    let closingHour: Int
+    let scrollToHour: Int
 
     static let hourHeight: CGFloat = 72
     static let leftWidth: CGFloat = 52
+    private let hours = Array(0...23)
 
-    private var hourCount: Int { max(1, closingHour - openingHour + 1) }
-    private var totalHeight: CGFloat { CGFloat(hourCount) * Self.hourHeight + 32 }
+    private var totalHeight: CGFloat { CGFloat(24) * Self.hourHeight + 32 }
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            ZStack(alignment: .topLeading) {
-                hourGridView
-                if Calendar.current.isDateInToday(date) {
-                    currentTimeLine
+        ScrollViewReader { proxy in
+            ScrollView(.vertical, showsIndicators: false) {
+                ZStack(alignment: .topLeading) {
+                    hourGridView
+                    if Calendar.current.isDateInToday(date) {
+                        currentTimeLine
+                    }
+                    ForEach(appointments) { appt in
+                        apptCard(appt)
+                    }
                 }
-                ForEach(appointments) { appt in
-                    apptCard(appt)
-                }
+                .frame(height: totalHeight)
+                .padding(.horizontal, 12)
             }
-            .frame(height: totalHeight)
-            .padding(.horizontal, 12)
+            .background(AppTheme.background)
+            .onAppear {
+                let target = max(0, scrollToHour - 1)
+                proxy.scrollTo(target, anchor: .top)
+            }
+            .onChange(of: date) { _, _ in
+                let target = max(0, scrollToHour - 1)
+                proxy.scrollTo(target, anchor: .top)
+            }
         }
-        .background(AppTheme.background)
     }
 
     private var hourGridView: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(openingHour...closingHour, id: \.self) { hour in
+            ForEach(hours, id: \.self) { hour in
                 HStack(alignment: .top, spacing: 8) {
                     Text(String(format: "%02d:00", hour))
                         .font(.system(size: 11, weight: .medium, design: .monospaced))
@@ -128,6 +235,7 @@ private struct DayTimelineView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .frame(height: Self.hourHeight, alignment: .top)
+                .id(hour)
             }
         }
         .padding(.top, 16)
@@ -138,22 +246,20 @@ private struct DayTimelineView: View {
         let cal = Calendar.current
         let hour = cal.component(.hour, from: .now)
         let minute = cal.component(.minute, from: .now)
-        if hour >= openingHour && hour <= closingHour {
-            HStack(spacing: 4) {
-                Text(Date.now.formatted(date: .omitted, time: .shortened))
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 2)
-                    .background(Color.red, in: RoundedRectangle(cornerRadius: 3))
-                    .frame(width: Self.leftWidth, alignment: .trailing)
-                Capsule()
-                    .fill(Color.red)
-                    .frame(height: 2)
-                    .frame(maxWidth: .infinity)
-            }
-            .padding(.top, timeOffset(hour: hour, minute: minute) + 16 + 8)
+        HStack(spacing: 4) {
+            Text(Date.now.formatted(date: .omitted, time: .shortened))
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+                .background(Color.red, in: RoundedRectangle(cornerRadius: 3))
+                .frame(width: Self.leftWidth, alignment: .trailing)
+            Capsule()
+                .fill(Color.red)
+                .frame(height: 2)
+                .frame(maxWidth: .infinity)
         }
+        .padding(.top, timeOffset(hour: hour, minute: minute) + 16 + 8)
     }
 
     private func apptCard(_ appointment: Appointment) -> some View {
@@ -172,9 +278,7 @@ private struct DayTimelineView: View {
                 Rectangle()
                     .fill(isDim ? AppTheme.textSecondary : color)
                     .frame(width: 4)
-                    .clipShape(
-                        UnevenRoundedRectangle(topLeadingRadius: 10, bottomLeadingRadius: 10)
-                    )
+                    .clipShape(UnevenRoundedRectangle(topLeadingRadius: 10, bottomLeadingRadius: 10))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(appointment.customerName)
                         .font(.system(size: 13, weight: .bold))
@@ -199,10 +303,7 @@ private struct DayTimelineView: View {
             .frame(height: cardHeight)
             .background(isDim ? AppTheme.textSecondary.opacity(0.07) : color.opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: 10))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(isDim ? AppTheme.textSecondary.opacity(0.2) : color.opacity(0.4))
-            )
+            .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(isDim ? AppTheme.textSecondary.opacity(0.2) : color.opacity(0.4)))
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -211,7 +312,7 @@ private struct DayTimelineView: View {
     }
 
     private func timeOffset(hour: Int, minute: Int) -> CGFloat {
-        CGFloat((hour - openingHour) * 60 + minute) / 60 * Self.hourHeight
+        CGFloat(hour * 60 + minute) / 60 * Self.hourHeight
     }
 }
 
@@ -328,7 +429,6 @@ private struct AgendaCard: View {
 private struct MonthCalendarView: View {
     @Binding var selectedDate: Date
     let appointments: [Appointment]
-    let onDayTapped: () -> Void
 
     @State private var displayMonth: Date = Calendar.current.startOfDay(for: .now)
 
@@ -339,12 +439,9 @@ private struct MonthCalendarView: View {
     private var monthDays: [Date?] {
         guard let monthStart = cal.date(from: cal.dateComponents([.year, .month], from: displayMonth)),
               let range = cal.range(of: .day, in: .month, for: monthStart) else { return [] }
-
         var weekday = cal.component(.weekday, from: monthStart)
         weekday = weekday == 1 ? 7 : weekday - 1
-        let leadingBlanks = weekday - 1
-
-        var days: [Date?] = Array(repeating: nil, count: leadingBlanks)
+        var days: [Date?] = Array(repeating: nil, count: weekday - 1)
         for day in range {
             days.append(cal.date(byAdding: .day, value: day - 1, to: monthStart))
         }
@@ -356,12 +453,19 @@ private struct MonthCalendarView: View {
         appointments.filter { cal.isDate($0.dateTime, inSameDayAs: date) && $0.isActive }.count
     }
 
+    private var selectedDayAppointments: [Appointment] {
+        appointments
+            .filter { cal.isDate($0.dateTime, inSameDayAs: selectedDate) }
+            .sorted { $0.dateTime < $1.dateTime }
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
-            monthHeader
-            weekdayHeader
-            Divider().overlay(AppTheme.textSecondary.opacity(0.1))
-            ScrollView(.vertical, showsIndicators: false) {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 0) {
+                monthHeader
+                weekdayHeader
+                Divider().overlay(AppTheme.textSecondary.opacity(0.1))
+
                 LazyVGrid(columns: columns, spacing: 0) {
                     ForEach(monthDays.indices, id: \.self) { i in
                         if let day = monthDays[i] {
@@ -372,7 +476,6 @@ private struct MonthCalendarView: View {
                                 apptCount: appointmentCount(for: day)
                             ) {
                                 selectedDate = day
-                                onDayTapped()
                             }
                         } else {
                             Color.clear.frame(height: 52)
@@ -380,7 +483,49 @@ private struct MonthCalendarView: View {
                     }
                 }
                 .padding(.horizontal, 8)
-                .padding(.bottom, 16)
+
+                Divider()
+                    .overlay(AppTheme.textSecondary.opacity(0.15))
+                    .padding(.top, 8)
+
+                // Seçili gün randevuları
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Text(selectedDate.formatted(.dateTime.day().month(.wide).weekday(.wide).locale(Locale(identifier: "tr_TR"))))
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(cal.isDateInToday(selectedDate) ? AppTheme.primary : .primary)
+                        if cal.isDateInToday(selectedDate) {
+                            Text("BUGÜN")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 3)
+                                .background(AppTheme.primary, in: RoundedRectangle(cornerRadius: 4))
+                        }
+                        Spacer()
+                    }
+
+                    if selectedDayAppointments.isEmpty {
+                        Text("Bu gün için randevu yok")
+                            .font(.subheadline)
+                            .foregroundStyle(AppTheme.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(14)
+                            .background(AppTheme.surface, in: RoundedRectangle(cornerRadius: 10))
+                    } else {
+                        ForEach(selectedDayAppointments) { appt in
+                            NavigationLink {
+                                AppointmentDetailView(appointment: appt)
+                            } label: {
+                                AgendaCard(appointment: appt)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 14)
+                .padding(.bottom, 24)
             }
         }
         .background(AppTheme.background)

@@ -23,60 +23,21 @@ enum SeedDataService {
             Service.defaults.forEach(context.insert)
         }
 
-        let customerCount = (try? context.fetchCount(FetchDescriptor<Customer>())) ?? 0
-        if customerCount == 0 {
-            seedPreviewFlow(in: context)
-        }
-
         try? context.save()
     }
 
     @MainActor
-    private static func seedPreviewFlow(in context: ModelContext) {
-        let customers = [
-            Customer(name: "Ayşe Demir", phone: "0555 111 22 33", serviceNotes: "Kısa görüşme tercih ediyor."),
-            Customer(name: "Mehmet Kaya", phone: "0555 444 55 66"),
-            Customer(name: "Zeynep Arslan", phone: "0555 777 88 99", generalNotes: "WhatsApp hatırlatma gönder.")
-        ]
-        customers.forEach(context.insert)
-
-        let appointments = [
-            Appointment(
-                customerId: customers[0].id,
-                customerName: customers[0].name,
-                customerPhone: customers[0].phone,
-                dateTime: Calendar.current.date(bySettingHour: 10, minute: 30, second: 0, of: .now) ?? .now,
-                durationMinutes: 45,
-                serviceIds: ["svc_danisman"],
-                serviceName: "Danışmanlık",
-                serviceColor: "#007AFF",
-                status: .confirmed,
-                totalPrice: 200
-            ),
-            Appointment(
-                customerId: customers[1].id,
-                customerName: customers[1].name,
-                customerPhone: customers[1].phone,
-                dateTime: Calendar.current.date(bySettingHour: 14, minute: 0, second: 0, of: .now) ?? .now,
-                durationMinutes: 30,
-                serviceIds: ["svc_genel"],
-                serviceName: "Genel Randevu",
-                serviceColor: "#5856D6",
-                totalPrice: 100
-            ),
-            Appointment(
-                customerId: customers[2].id,
-                customerName: customers[2].name,
-                customerPhone: customers[2].phone,
-                dateTime: Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now,
-                durationMinutes: 60,
-                serviceIds: ["svc_egitim"],
-                serviceName: "Eğitim / Ders",
-                serviceColor: "#FF2D55",
-                totalPrice: 120
-            )
-        ]
-        appointments.forEach(context.insert)
+    static func resetAllData(in context: ModelContext) throws {
+        for item in try context.fetch(FetchDescriptor<Appointment>()) {
+            NotificationScheduler.cancel(for: item)
+            context.delete(item)
+        }
+        for item in try context.fetch(FetchDescriptor<Customer>()) { context.delete(item) }
+        for item in try context.fetch(FetchDescriptor<Service>()) { context.delete(item) }
+        for item in try context.fetch(FetchDescriptor<Business>()) { context.delete(item) }
+        context.insert(Business.defaultBusiness())
+        Service.defaults.forEach(context.insert)
+        try context.save()
     }
 }
 
@@ -315,6 +276,10 @@ struct RandevularimShortcuts: AppShortcutsProvider {
 enum LiveActivityManager {
     static func start(for appointment: Appointment) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        let alreadyRunning = Activity<AppointmentActivityAttributes>.activities
+            .contains { $0.attributes.appointmentId == appointment.id }
+        guard !alreadyRunning else { return }
+
         let attributes = AppointmentActivityAttributes(appointmentId: appointment.id)
         let state = AppointmentActivityAttributes.ContentState(
             customerName: appointment.customerName,
@@ -322,10 +287,41 @@ enum LiveActivityManager {
             startDate: appointment.dateTime,
             endDate: appointment.endTime
         )
-        do {
-            _ = try Activity.request(attributes: attributes, content: .init(state: state, staleDate: appointment.endTime), pushType: nil)
-        } catch {
-            // Live Activities best-effort; normal appointment flow should not fail.
+        try? Activity.request(
+            attributes: attributes,
+            content: .init(state: state, staleDate: appointment.endTime),
+            pushType: nil
+        )
+    }
+
+    static func checkAndSync(appointments: [Appointment]) {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        let now = Date.now
+        for appointment in appointments {
+            guard appointment.isActive,
+                  appointment.dateTime <= now.addingTimeInterval(60),
+                  appointment.endTime > now else { continue }
+            start(for: appointment)
+        }
+        Task {
+            for activity in Activity<AppointmentActivityAttributes>.activities {
+                let apptId = activity.attributes.appointmentId
+                let shouldEnd = appointments.first(where: { $0.id == apptId }).map {
+                    $0.endTime <= now || !$0.isActive
+                } ?? true
+                if shouldEnd {
+                    await activity.end(nil, dismissalPolicy: .immediate)
+                }
+            }
+        }
+    }
+
+    static func end(for appointment: Appointment) {
+        Task {
+            for activity in Activity<AppointmentActivityAttributes>.activities
+                where activity.attributes.appointmentId == appointment.id {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            }
         }
     }
 

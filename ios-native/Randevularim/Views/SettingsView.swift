@@ -1,58 +1,88 @@
 import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
+import Contacts
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.openURL) private var openURL
     @Query(sort: \Business.name) private var businesses: [Business]
-    @Query(sort: \Service.sortOrder) private var services: [Service]
-    @Query(sort: \Appointment.dateTime) private var appointments: [Appointment]
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
     @AppStorage("globalNotificationsEnabled") private var globalNotificationsEnabled = true
     @AppStorage("defaultReminderMinutes") private var defaultReminderMinutes = 30
+    @AppStorage("selectedThemeId") private var selectedThemeId = "night_blue"
+    @AppStorage("themeVersion") private var themeVersion = 0
+    @AppStorage("colorSchemePref") private var colorSchemePref = "dark"
     @State private var isShowingBusinessForm = false
-    @State private var isShowingServiceForm = false
     @State private var exportDocument: BackupDocument?
     @State private var isShowingExporter = false
     @State private var isShowingImporter = false
     @State private var statusMessage: String?
+    @State private var isShowingContactsAlert = false
+    @State private var isImportingContacts = false
+    @State private var isShowingResetConfirm = false
 
-    private var business: Business {
-        businesses.first ?? Business.defaultBusiness()
-    }
+    private var business: Business { businesses.first ?? Business.defaultBusiness() }
 
     var body: some View {
         RandevularimScreen(title: "Ayarlar") {
             List {
+                Section("Görünüm") {
+                    Picker("Renk Modu", selection: Binding(
+                        get: { colorSchemePref },
+                        set: { newValue in
+                            colorSchemePref = newValue
+                            AppTheme.apply(id: selectedThemeId, colorSchemePref: newValue)
+                            themeVersion += 1
+                        }
+                    )) {
+                        Text("Açık").tag("light")
+                        Text("Koyu").tag("dark")
+                        Text("Otomatik").tag("auto")
+                    }
+                    .pickerStyle(.segmented)
+
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 14) {
+                        ForEach(ThemeConfig.all, id: \.id) { config in
+                            VStack(spacing: 4) {
+                                Circle()
+                                    .fill(config.primary)
+                                    .frame(width: 40, height: 40)
+                                    .overlay {
+                                        if selectedThemeId == config.id {
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 14, weight: .bold))
+                                                .foregroundStyle(.white)
+                                        }
+                                    }
+                                    .overlay {
+                                        Circle().strokeBorder(selectedThemeId == config.id ? .white : .clear, lineWidth: 2)
+                                    }
+                                Text(config.name)
+                                    .font(.system(size: 9))
+                                    .foregroundStyle(AppTheme.textSecondary)
+                                    .lineLimit(1)
+                            }
+                            .onTapGesture {
+                                selectedThemeId = config.id
+                                AppTheme.apply(id: config.id, colorSchemePref: colorSchemePref)
+                                themeVersion += 1
+                            }
+                        }
+                    }
+                    .padding(.vertical, 6)
+                }
+
                 Section("İşletme") {
                     LabeledContent("Ad", value: business.name)
                     LabeledContent("Kategori", value: business.category)
                     LabeledContent("Çalışma saatleri", value: "\(business.openingTime) - \(business.closingTime)")
-                    Button("İşletmeyi Düzenle") {
-                        isShowingBusinessForm = true
-                    }
+                    Button("İşletmeyi Düzenle") { isShowingBusinessForm = true }
                 }
 
                 Section("Hizmetler") {
-                    ForEach(services) { service in
-                        NavigationLink {
-                            ServiceFormView(service: service)
-                        } label: {
-                            HStack {
-                                Circle()
-                                    .fill(service.color)
-                                    .frame(width: 12, height: 12)
-                                Text(service.name)
-                                Spacer()
-                                Text("\(service.durationMinutes) dk")
-                                    .foregroundStyle(AppTheme.textSecondary)
-                            }
-                        }
-                    }
-                    .onDelete(perform: deleteServices)
-
-                    Button("Hizmet Ekle") {
-                        isShowingServiceForm = true
+                    NavigationLink("Hizmetleri Düzenle") {
+                        ServiceManagementView()
                     }
                 }
 
@@ -65,23 +95,22 @@ struct SettingsView: View {
                             statusMessage = "Yedek alınamadı: \(error.localizedDescription)"
                         }
                     }
-
-                    Button("Yedekten Geri Yükle") {
-                        isShowingImporter = true
-                    }
+                    Button("Yedekten Geri Yükle") { isShowingImporter = true }
                 }
 
                 Section("Rehber") {
-                    Button("Rehberden Müşteri Aktar") {
-                        Task {
-                            do {
-                                let count = try await ContactImportService.importContacts(into: modelContext)
-                                statusMessage = "\(count) müşteri aktarıldı."
-                            } catch {
-                                statusMessage = "Rehber aktarılamadı: \(error.localizedDescription)"
+                    Button {
+                        handleContactImport()
+                    } label: {
+                        HStack {
+                            Text("Rehberden Müşteri Aktar")
+                            if isImportingContacts {
+                                Spacer()
+                                ProgressView()
                             }
                         }
                     }
+                    .disabled(isImportingContacts)
                 }
 
                 Section("Bildirimler") {
@@ -102,24 +131,19 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("Native iOS") {
-                    Button("Sıradaki Randevuyu Live Activity Başlat") {
-                        startNextLiveActivity()
-                    }
-                    Label("WidgetKit veri temeli hazır", systemImage: "rectangle.grid.2x2")
-                    Label("Siri/App Intents aktif", systemImage: "sparkles")
+                Section("İlk Açılış") {
+                    Button("Onboarding'i Tekrar Göster") { hasCompletedOnboarding = false }
                 }
 
-                Section("İlk Açılış") {
-                    Button("Onboarding'i Tekrar Göster") {
-                        hasCompletedOnboarding = false
+                Section {
+                    Button("Tüm Verileri Sıfırla", role: .destructive) {
+                        isShowingResetConfirm = true
                     }
                 }
 
                 if let statusMessage {
                     Section {
-                        Text(statusMessage)
-                            .foregroundStyle(AppTheme.textSecondary)
+                        Text(statusMessage).foregroundStyle(AppTheme.textSecondary)
                     }
                 }
             }
@@ -128,9 +152,6 @@ struct SettingsView: View {
             .sheet(isPresented: $isShowingBusinessForm) {
                 BusinessFormView(business: business)
             }
-            .sheet(isPresented: $isShowingServiceForm) {
-                ServiceFormView()
-            }
             .fileExporter(
                 isPresented: $isShowingExporter,
                 document: exportDocument,
@@ -138,10 +159,8 @@ struct SettingsView: View {
                 defaultFilename: "randevularim-yedek"
             ) { result in
                 switch result {
-                case .success:
-                    statusMessage = "Yedek dışa aktarıldı."
-                case .failure(let error):
-                    statusMessage = "Yedek dışa aktarılamadı: \(error.localizedDescription)"
+                case .success: statusMessage = "Yedek dışa aktarıldı."
+                case .failure(let error): statusMessage = "Yedek dışa aktarılamadı: \(error.localizedDescription)"
                 }
             }
             .fileImporter(isPresented: $isShowingImporter, allowedContentTypes: [.json]) { result in
@@ -158,7 +177,111 @@ struct SettingsView: View {
                     statusMessage = "Yedek geri yüklenemedi: \(error.localizedDescription)"
                 }
             }
+            .confirmationDialog("Tüm Verileri Sıfırla", isPresented: $isShowingResetConfirm, titleVisibility: .visible) {
+                Button("Sıfırla", role: .destructive) {
+                    do {
+                        try SeedDataService.resetAllData(in: modelContext)
+                        statusMessage = "Tüm veriler silindi. İşletme ve hizmetler varsayılana döndürüldü."
+                    } catch {
+                        statusMessage = "Sıfırlama başarısız: \(error.localizedDescription)"
+                    }
+                }
+                Button("Vazgeç", role: .cancel) {}
+            } message: {
+                Text("Tüm müşteriler, randevular ve özel hizmetler silinir. İşletme bilgileri ve varsayılan hizmetler yeniden oluşturulur. Bu işlem geri alınamaz.")
+            }
+            .alert("Rehber Erişimi Gerekli", isPresented: $isShowingContactsAlert) {
+                Button("Ayarları Aç") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                }
+                Button("Vazgeç", role: .cancel) {}
+            } message: {
+                Text("Rehbere erişim izni verilmemiş. Ayarlar > Gizlilik > Kişiler bölümünden izin verin.")
+            }
         }
+    }
+
+    private func handleContactImport() {
+        let status = CNContactStore.authorizationStatus(for: .contacts)
+        if status == .denied || status == .restricted {
+            isShowingContactsAlert = true
+            return
+        }
+        isImportingContacts = true
+        Task {
+            defer { isImportingContacts = false }
+            do {
+                let count = try await ContactImportService.importContacts(into: modelContext)
+                statusMessage = "\(count) müşteri aktarıldı."
+            } catch {
+                statusMessage = "Rehber aktarılamadı: \(error.localizedDescription)"
+            }
+        }
+    }
+
+}
+
+// MARK: - Service Management
+
+private struct ServiceManagementView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Service.sortOrder) private var services: [Service]
+    @State private var isShowingForm = false
+
+    var body: some View {
+        List {
+            ForEach(services) { service in
+                NavigationLink {
+                    ServiceFormView(service: service)
+                } label: {
+                    HStack(spacing: 10) {
+                        Circle()
+                            .fill(Color(hex: service.colorHex))
+                            .frame(width: 12, height: 12)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(service.name)
+                            Text("\(service.durationMinutes) dk · \(service.price.formatted(.currency(code: "TRY").precision(.fractionLength(0))))")
+                                .font(.caption)
+                                .foregroundStyle(AppTheme.textSecondary)
+                        }
+                        if !service.isActive {
+                            Spacer()
+                            Text("Pasif")
+                                .font(.caption)
+                                .foregroundStyle(AppTheme.textSecondary)
+                        }
+                    }
+                }
+                .listRowBackground(AppTheme.surface)
+            }
+            .onMove(perform: moveServices)
+            .onDelete(perform: deleteServices)
+        }
+        .navigationTitle("Hizmetler")
+        .scrollContentBackground(.hidden)
+        .background(AppTheme.background)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { isShowingForm = true } label: {
+                    Image(systemName: "plus")
+                }
+            }
+            ToolbarItem(placement: .topBarLeading) {
+                EditButton()
+            }
+        }
+        .sheet(isPresented: $isShowingForm) {
+            ServiceFormView()
+        }
+    }
+
+    private func moveServices(from source: IndexSet, to destination: Int) {
+        var reordered = services
+        reordered.move(fromOffsets: source, toOffset: destination)
+        for (idx, service) in reordered.enumerated() {
+            service.sortOrder = idx
+        }
+        try? modelContext.save()
     }
 
     private func deleteServices(at offsets: IndexSet) {
@@ -167,28 +290,15 @@ struct SettingsView: View {
         }
         try? modelContext.save()
     }
-
-    private func startNextLiveActivity() {
-        guard let appointment = appointments.first(where: { $0.dateTime >= .now && $0.isActive }) else {
-            statusMessage = "Başlatılacak gelecek randevu yok."
-            return
-        }
-        #if canImport(ActivityKit)
-        LiveActivityManager.start(for: appointment)
-        statusMessage = "Live Activity başlatma isteği gönderildi."
-        #else
-        statusMessage = "Live Activities bu platformda desteklenmiyor."
-        #endif
-    }
 }
+
+// MARK: - Backup Document
 
 private struct BackupDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.json] }
     var data: Data
 
-    init(data: Data) {
-        self.data = data
-    }
+    init(data: Data) { self.data = data }
 
     init(configuration: ReadConfiguration) throws {
         data = configuration.file.regularFileContents ?? Data()
@@ -198,6 +308,8 @@ private struct BackupDocument: FileDocument {
         FileWrapper(regularFileWithContents: data)
     }
 }
+
+// MARK: - Business Form
 
 private struct BusinessFormView: View {
     @Environment(\.dismiss) private var dismiss
@@ -258,7 +370,9 @@ private struct BusinessFormView: View {
     }
 }
 
-private struct ServiceFormView: View {
+// MARK: - Service Form
+
+struct ServiceFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Service.sortOrder) private var services: [Service]
@@ -307,9 +421,7 @@ private struct ServiceFormView: View {
                                             .foregroundStyle(.white)
                                     }
                                 }
-                                .onTapGesture {
-                                    colorHex = hex
-                                }
+                                .onTapGesture { colorHex = hex }
                         }
                     }
                 }
