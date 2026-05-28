@@ -243,6 +243,7 @@ private struct CustomerFormView: View {
                     TextField("Genel not", text: $generalNotes, axis: .vertical)
                 }
             }
+            .dismissKeyboardOnTap()
             .navigationTitle(customer == nil ? "Müşteri Ekle" : "Müşteriyi Düzenle")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

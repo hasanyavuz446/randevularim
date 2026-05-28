@@ -24,8 +24,8 @@ final class Business: Identifiable, Equatable {
         address: String = "",
         logoUrl: String = "",
         workingDays: [Int] = [1, 2, 3, 4, 5, 6],
-        openingTime: String = "09:00",
-        closingTime: String = "19:00",
+        openingTime: String = "00:00",
+        closingTime: String = "00:00",
         appointmentIntervalMinutes: Int = 30,
         createdAt: Date = .now,
         updatedAt: Date = .now

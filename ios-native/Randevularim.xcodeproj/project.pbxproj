@@ -25,6 +25,7 @@
 		100000000000000000000116 /* RandevularimWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000216 /* RandevularimWidget.swift */; };
 		100000000000000000000117 /* RandevularimWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 100000000000000000000002 /* RandevularimWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		100000000000000000000120 /* AppointmentActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000218 /* AppointmentActivityAttributes.swift */; };
+		100000000000000000000123 /* View+Keyboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000221 /* View+Keyboard.swift */; };
 		100000000000000000000121 /* AppointmentActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000218 /* AppointmentActivityAttributes.swift */; };
 		100000000000000000000122 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000219 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -75,6 +76,7 @@
 		100000000000000000000217 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		100000000000000000000218 /* AppointmentActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppointmentActivityAttributes.swift; sourceTree = "<group>"; };
 		100000000000000000000219 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		100000000000000000000221 /* View+Keyboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Keyboard.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -98,6 +100,7 @@
 				100000000000000000000031 /* Theme */,
 				100000000000000000000032 /* Store */,
 				100000000000000000000033 /* Views */,
+				100000000000000000000034 /* Extensions */,
 			);
 			path = Randevularim;
 			sourceTree = "<group>";
@@ -150,6 +153,14 @@
 				100000000000000000000213 /* SettingsView.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		100000000000000000000034 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000221 /* View+Keyboard.swift */,
+			);
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 		100000000000000000000012 /* RandevularimWidget */ = {
@@ -303,6 +314,7 @@
 				100000000000000000000114 /* CalendarView.swift in Sources */,
 				100000000000000000000115 /* StatisticsView.swift in Sources */,
 				100000000000000000000120 /* AppointmentActivityAttributes.swift in Sources */,
+				100000000000000000000123 /* View+Keyboard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

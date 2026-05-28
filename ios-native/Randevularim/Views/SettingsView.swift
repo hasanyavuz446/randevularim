@@ -33,7 +33,6 @@ struct SettingsView: View {
                         set: { newValue in
                             colorSchemePref = newValue
                             AppTheme.apply(id: selectedThemeId, colorSchemePref: newValue)
-                            themeVersion += 1
                         }
                     )) {
                         Text("Açık").tag("light")
@@ -66,7 +65,6 @@ struct SettingsView: View {
                             .onTapGesture {
                                 selectedThemeId = config.id
                                 AppTheme.apply(id: config.id, colorSchemePref: colorSchemePref)
-                                themeVersion += 1
                             }
                         }
                     }
@@ -199,6 +197,9 @@ struct SettingsView: View {
                 Text("Rehbere erişim izni verilmemiş. Ayarlar > Gizlilik > Kişiler bölümünden izin verin.")
             }
         }
+        .onDisappear {
+            themeVersion += 1
+        }
     }
 
     private func handleContactImport() {
@@ -319,8 +320,8 @@ private struct BusinessFormView: View {
     @State private var category: String
     @State private var phone: String
     @State private var address: String
-    @State private var openingTime: String
-    @State private var closingTime: String
+    @State private var openingDate: Date
+    @State private var closingDate: Date
 
     init(business: Business) {
         self.business = business
@@ -328,8 +329,8 @@ private struct BusinessFormView: View {
         _category = State(initialValue: business.category)
         _phone = State(initialValue: business.phone)
         _address = State(initialValue: business.address)
-        _openingTime = State(initialValue: business.openingTime)
-        _closingTime = State(initialValue: business.closingTime)
+        _openingDate = State(initialValue: Self.date(from: business.openingTime))
+        _closingDate = State(initialValue: Self.date(from: business.closingTime))
     }
 
     var body: some View {
@@ -342,10 +343,14 @@ private struct BusinessFormView: View {
                     TextField("Adres", text: $address, axis: .vertical)
                 }
                 Section("Çalışma Saatleri") {
-                    TextField("Açılış", text: $openingTime)
-                    TextField("Kapanış", text: $closingTime)
+                    DatePicker("Açılış", selection: $openingDate, displayedComponents: .hourAndMinute)
+                    DatePicker("Kapanış", selection: $closingDate, displayedComponents: .hourAndMinute)
+                    Text("Açılış ve kapanış aynı saat seçilirse 24 saat açık kabul edilir.")
+                        .font(.caption)
+                        .foregroundStyle(AppTheme.textSecondary)
                 }
             }
+            .dismissKeyboardOnTap()
             .navigationTitle("İşletme")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -357,8 +362,8 @@ private struct BusinessFormView: View {
                         business.category = category
                         business.phone = phone
                         business.address = address
-                        business.openingTime = openingTime
-                        business.closingTime = closingTime
+                        business.openingTime = Self.timeString(from: openingDate)
+                        business.closingTime = Self.timeString(from: closingDate)
                         business.updatedAt = .now
                         try? modelContext.save()
                         dismiss()
@@ -367,6 +372,20 @@ private struct BusinessFormView: View {
                 }
             }
         }
+    }
+
+    private static func date(from timeString: String) -> Date {
+        let parts = timeString.split(separator: ":").compactMap { Int($0) }
+        guard parts.count == 2 else { return .now }
+        var comps = Calendar.current.dateComponents([.year, .month, .day], from: .now)
+        comps.hour = parts[0]
+        comps.minute = parts[1]
+        return Calendar.current.date(from: comps) ?? .now
+    }
+
+    private static func timeString(from date: Date) -> String {
+        let cal = Calendar.current
+        return String(format: "%02d:%02d", cal.component(.hour, from: date), cal.component(.minute, from: date))
     }
 }
 
@@ -403,8 +422,12 @@ struct ServiceFormView: View {
                 Section("Hizmet") {
                     TextField("Ad", text: $name)
                     Stepper("\(durationMinutes) dk", value: $durationMinutes, in: 5...360, step: 5)
-                    TextField("Fiyat", value: $price, format: .number)
-                        .keyboardType(.decimalPad)
+                    HStack {
+                        TextField("Fiyat", value: $price, format: .number)
+                            .keyboardType(.decimalPad)
+                        Text("TL")
+                            .foregroundStyle(AppTheme.textSecondary)
+                    }
                     Toggle("Aktif", isOn: $isActive)
                 }
 
@@ -430,6 +453,7 @@ struct ServiceFormView: View {
                     TextField("Açıklama", text: $serviceDescription, axis: .vertical)
                 }
             }
+            .dismissKeyboardOnTap()
             .navigationTitle(service == nil ? "Hizmet Ekle" : "Hizmeti Düzenle")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

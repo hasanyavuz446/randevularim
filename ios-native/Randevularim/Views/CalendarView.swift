@@ -49,8 +49,7 @@ struct CalendarView: View {
                             dayWeekStrip
                             DayTimelineView(
                                 date: selectedDate,
-                                appointments: appointmentsForDay(selectedDate),
-                                scrollToHour: openingHour
+                                appointments: appointmentsForDay(selectedDate)
                             )
                         }
                     case .week:
@@ -185,7 +184,6 @@ struct CalendarView: View {
 private struct DayTimelineView: View {
     let date: Date
     let appointments: [Appointment]
-    let scrollToHour: Int
 
     static let hourHeight: CGFloat = 72
     static let leftWidth: CGFloat = 52
@@ -210,12 +208,8 @@ private struct DayTimelineView: View {
             }
             .background(AppTheme.background)
             .onAppear {
-                let target = max(0, scrollToHour - 1)
-                proxy.scrollTo(target, anchor: .top)
-            }
-            .onChange(of: date) { _, _ in
-                let target = max(0, scrollToHour - 1)
-                proxy.scrollTo(target, anchor: .top)
+                let hour = Calendar.current.component(.hour, from: .now)
+                proxy.scrollTo(hour, anchor: .center)
             }
         }
     }

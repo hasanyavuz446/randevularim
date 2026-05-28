@@ -118,11 +118,12 @@ struct AppointmentListRow: View {
                 Text(appointment.customerName)
                     .font(.headline)
                 Spacer()
-                Text(appointment.status.label)
-                    .font(.caption.weight(.semibold))
+                Text(appointment.status.label.uppercased())
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(appointment.status.displayColor)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(AppTheme.secondarySurface, in: Capsule())
+                    .background(appointment.status.displayColor.opacity(0.15), in: Capsule())
             }
             Text(appointment.serviceName)
                 .foregroundStyle(AppTheme.textSecondary)
@@ -154,16 +155,9 @@ struct AppointmentDetailView: View {
                 LabeledContent("Tarih", value: appointment.dateTime.formatted(date: .abbreviated, time: .shortened))
                 LabeledContent("Süre", value: "\(appointment.durationMinutes) dk")
                 LabeledContent("Ücret", value: appointment.totalPrice.formatted(.currency(code: "TRY").precision(.fractionLength(0))))
-            }
-
-            Section("Durum") {
-                Picker("Durum", selection: $appointment.status) {
-                    ForEach(AppointmentStatus.allCases) { status in
-                        Text(status.label).tag(status)
-                    }
-                }
-                .onChange(of: appointment.status) { _, _ in
-                    persistAppointmentChange()
+                LabeledContent("Durum") {
+                    Text(appointment.status.label)
+                        .foregroundStyle(appointment.status.displayColor)
                 }
             }
 
@@ -177,12 +171,13 @@ struct AppointmentDetailView: View {
                 }
             }
 
-            Section("Hızlı İşlemler") {
+            Section("Durum") {
                 if appointment.status != .confirmed {
                     Button("Randevuyu Teyit Et") { updateStatus(.confirmed) }
                 }
                 if appointment.status != .completed {
                     Button("Tamamlandı Olarak İşaretle") { confirmation = .complete }
+                        .foregroundStyle(AppTheme.success)
                 }
                 if appointment.status != .noShow {
                     Button("Müşteri Gelmedi") { confirmation = .noShow }
@@ -383,11 +378,12 @@ struct AppointmentFormView: View {
         guard let biz = businesses.first,
               let opening = timeComponents(from: biz.openingTime),
               let closing = timeComponents(from: biz.closingTime) else { return false }
+        let openMins = opening.hour * 60 + opening.minute
+        let closeMins = closing.hour * 60 + closing.minute
+        if openMins == closeMins { return false }
         let cal = Calendar.current
-        let h = cal.component(.hour, from: dateTime)
-        let m = cal.component(.minute, from: dateTime)
-        let start = h * 60 + m
-        return start < opening.hour * 60 + opening.minute || start >= closing.hour * 60 + closing.minute
+        let start = cal.component(.hour, from: dateTime) * 60 + cal.component(.minute, from: dateTime)
+        return start < openMins || start >= closeMins
     }
 
     var body: some View {
@@ -454,9 +450,23 @@ struct AppointmentFormView: View {
                         }
                     }
 
+                    Section("Süre") {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                durationButton(mins: 15, label: "15 dk")
+                                durationButton(mins: 30, label: "30 dk")
+                                durationButton(mins: 45, label: "45 dk")
+                                durationButton(mins: 60, label: "1 sa")
+                                durationButton(mins: 90, label: "1.5 sa")
+                                durationButton(mins: 120, label: "2 sa")
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        Stepper("\(durationMinutes) dk", value: $durationMinutes, in: 5...480, step: 5)
+                    }
+
                     Section("Zaman") {
                         DatePicker("Tarih ve Saat", selection: $dateTime)
-                        Stepper("\(durationMinutes) dk", value: $durationMinutes, in: 5...480, step: 5)
                         if isOutsideWorkingHours {
                             Label("Randevu çalışma saatleri dışında.", systemImage: "clock.badge.exclamationmark")
                                 .foregroundStyle(AppTheme.warning)
@@ -483,9 +493,16 @@ struct AppointmentFormView: View {
                         }
                     }
 
-                    Section("Ücret ve Durum") {
-                        TextField("Ücret", value: $totalPrice, format: .number)
-                            .keyboardType(.decimalPad)
+                    Section("Ücret") {
+                        HStack {
+                            TextField("Ücret", value: $totalPrice, format: .number)
+                                .keyboardType(.decimalPad)
+                            Text("TL")
+                                .foregroundStyle(AppTheme.textSecondary)
+                        }
+                    }
+
+                    Section("Durum") {
                         Picker("Durum", selection: $status) {
                             ForEach(AppointmentStatus.allCases) { status in
                                 Text(status.label).tag(status)
@@ -501,11 +518,12 @@ struct AppointmentFormView: View {
                         }
                     }
 
-                    Section("Not") {
+                    Section("Randevu Notu") {
                         TextField("Not", text: $notes, axis: .vertical)
                     }
                 }
             }
+            .dismissKeyboardOnTap()
             .navigationTitle(appointment == nil ? "Randevu Ekle" : "Randevuyu Düzenle")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -515,9 +533,9 @@ struct AppointmentFormView: View {
                     Button("Kaydet", action: save)
                         .disabled(customers.isEmpty || services.isEmpty || selectedCustomer == nil)
                 }
+
             }
             .onAppear {
-                if customerId.isEmpty { customerId = customers.first?.id ?? "" }
                 if selectedServiceIds.isEmpty, let first = activeServices.first {
                     selectedServiceIds = [first.id]
                     applySelectedServices()
@@ -527,6 +545,16 @@ struct AppointmentFormView: View {
                 CustomerPickerSheet(customers: customers, selectedId: $customerId)
             }
         }
+    }
+
+    private func durationButton(mins: Int, label: String) -> some View {
+        Button(label) { durationMinutes = mins }
+            .font(.caption.weight(.semibold))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(durationMinutes == mins ? AppTheme.primary : AppTheme.secondarySurface, in: Capsule())
+            .foregroundStyle(durationMinutes == mins ? .white : .primary)
+            .buttonStyle(.plain)
     }
 
     private func applySelectedServices() {

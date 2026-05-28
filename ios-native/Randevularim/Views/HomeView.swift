@@ -82,11 +82,12 @@ struct HomeView: View {
                     }
 
                     if featuredAppointment == nil && upcomingOther.isEmpty {
-                        appointmentSection(
-                            title: "Bugünün Programı",
-                            appointments: todayAppointments,
-                            emptyText: "Bugün randevu yok"
-                        )
+                        Text("Sırada bekleyen randevu yok.")
+                            .font(.subheadline)
+                            .foregroundStyle(AppTheme.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(16)
+                            .background(AppTheme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
                 }
                 .padding(16)
@@ -275,9 +276,16 @@ struct AppointmentRow: View {
                     Text(appointment.customerName)
                         .font(.headline)
                     Spacer()
-                    Text(appointment.dateTime.formatted(date: .omitted, time: .shortened))
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(AppTheme.accent)
+                    VStack(alignment: .trailing, spacing: 1) {
+                        Text(appointment.dateTime.formatted(date: .omitted, time: .shortened))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(AppTheme.accent)
+                        if !Calendar.current.isDateInToday(appointment.dateTime) {
+                            Text(appointment.dateTime.formatted(.dateTime.day().month(.abbreviated).locale(Locale(identifier: "tr_TR"))))
+                                .font(.caption2)
+                                .foregroundStyle(AppTheme.textSecondary)
+                        }
+                    }
                 }
                 Text("\(appointment.serviceName) · \(appointment.durationMinutes) dk")
                     .font(.subheadline)

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 enum AppointmentStatus: String, CaseIterable, Identifiable, Codable {
     case scheduled
@@ -16,6 +17,16 @@ enum AppointmentStatus: String, CaseIterable, Identifiable, Codable {
         case .completed: "Tamamlandı"
         case .cancelled: "İptal Edildi"
         case .noShow: "Gelmedi"
+        }
+    }
+
+    var displayColor: Color {
+        switch self {
+        case .scheduled: AppTheme.primary
+        case .confirmed: AppTheme.accent
+        case .completed: AppTheme.success
+        case .cancelled: AppTheme.danger
+        case .noShow: AppTheme.warning
         }
     }
 }
