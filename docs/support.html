@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Randevularım – Destek</title>
+  <style>
+    :root {
+      --bg: #0d0d1a;
+      --surface: #1a1a2e;
+      --primary: #496ed9;
+      --text: #f0f0f5;
+      --muted: rgba(255,255,255,0.55);
+      --border: rgba(255,255,255,0.09);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 0 16px 60px;
+    }
+    header {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 0 32px;
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 { font-size: 1.8rem; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+    header p { color: var(--muted); font-size: 0.9rem; }
+    main { max-width: 720px; margin: 0 auto; padding-top: 36px; }
+    section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 20px;
+    }
+    h2 { font-size: 1.05rem; font-weight: 600; color: var(--primary); margin-bottom: 12px; }
+    p { margin-bottom: 10px; }
+    p:last-child { margin-bottom: 0; }
+    ul { padding-left: 20px; margin-top: 6px; margin-bottom: 10px; }
+    li { margin-bottom: 6px; }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .faq-q { font-weight: 600; margin-top: 14px; margin-bottom: 4px; }
+    footer {
+      max-width: 720px;
+      margin: 40px auto 0;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Randevularım</h1>
+  <p>Destek Sayfası</p>
+</header>
+
+<main>
+
+  <section>
+    <h2>İletişim</h2>
+    <p>
+      Hata bildirmek, öneri göndermek veya yardım almak için:
+      <a href="mailto:yavuzzhasan@gmail.com">yavuzzhasan@gmail.com</a>
+    </p>
+    <p>E-postanızda uygulama sürümünü (Ayarlar &gt; Sürüm) ve iOS sürümünü belirtmeniz
+    sorununuzun daha hızlı çözülmesini sağlar.</p>
+  </section>
+
+  <section>
+    <h2>Sık Sorulan Sorular</h2>
+
+    <p class="faq-q">Verilerim nerede saklanıyor?</p>
+    <p>Tüm veriler yalnızca cihazınızda, iOS'un güvenli uygulama alanında saklanır.
+    Herhangi bir sunucuya veya buluta gönderilmez.</p>
+
+    <p class="faq-q">Verilerimi nasıl yedekleyebilirim?</p>
+    <p>Ayarlar &gt; Yedek &gt; "JSON Yedek Al" ile tüm verilerinizi bir dosyaya aktarabilirsiniz.
+    Geri yüklemek için "Yedekten Geri Yükle" seçeneğini kullanın.</p>
+
+    <p class="faq-q">Uygulamayı silersem verilerim ne olur?</p>
+    <p>Uygulamayı sildiğinizde tüm veriler kalıcı olarak silinir. Öncesinde yedek almanızı öneririz.</p>
+
+    <p class="faq-q">Rehber iznini neden istiyor?</p>
+    <p>Rehberden müşteri aktarma özelliği için bu izin gerekir. İzni vermek zorunda değilsiniz;
+    müşterileri manuel olarak da ekleyebilirsiniz. Ayarlar &gt; Gizlilik &gt; Kişiler bölümünden
+    izni istediğiniz zaman geri alabilirsiniz.</p>
+
+    <p class="faq-q">Bildirimler çalışmıyor, ne yapmalıyım?</p>
+    <p>iOS Ayarları &gt; Randevularım &gt; Bildirimler bölümünden bildirimlerin açık olduğunu
+    kontrol edin. Uygulama içinde Ayarlar &gt; Bildirimler'den de bildirimlerin etkin olduğunu doğrulayın.</p>
+
+    <p class="faq-q">Tüm verilerimi nasıl silerim?</p>
+    <p>Ayarlar &gt; Sıfırlama &gt; "Tüm Verileri Sıfırla" seçeneğini kullanabilirsiniz.
+    Bu işlem geri alınamaz; öncesinde yedek almanızı öneririz.</p>
+  </section>
+
+  <section>
+    <h2>Gizlilik Politikası</h2>
+    <p>
+      Gizlilik politikamızı okumak için:
+      <a href="privacy.html">Gizlilik Politikası</a>
+    </p>
+  </section>
+
+</main>
+
+<footer>
+  <p>&copy; 2026 Randevularım. Tüm hakları saklıdır.</p>
+</footer>
+
+</body>
+</html>

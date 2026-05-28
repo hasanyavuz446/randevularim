@@ -147,6 +147,9 @@ Son kaynak durumunda:
 
 Flutter komutlarını paralel çalıştırma; startup lock nedeniyle bazen `ios/Flutter/ephemeral/Packages/.packages` silme hatası veriyor. Böyle olursa komutu tek başına yeniden çalıştır.
 
+- 2026-05-28: Release hazırlık düzeltmeleri yapıldı (build 14): PrivacyInfo.xcprivacy eklendi (UserDefaults CA92.1), 3 yerde `tel://` force-unwrap crash koruması eklendi, CustomerDetailView WhatsApp URL `wa.me` formatına taşındı, iPhone Landscape yönü kaldırıldı (sadece Portrait), Release config'deki yazım hatası düzeltildi (duyulmaktadır), StatisticsView Divider hardcoded white → AppTheme.divider, Ayarlar'a uygulama versiyon bilgisi eklendi. Archive + Ad Hoc IPA `/private/tmp/RandevularimNativeAdHocExport_20260528_1527/Randevularim.ipa` olarak cihaza yüklendi.
+- 2026-05-28: Tema/mod değişiminde bazı view'ların (List satırları, sheet'ler, push'lanmış ekranlar) güncellenmemesi kökten düzeltildi. `AppTheme` static var'ları artık `@Observable final class ThemeValues` singleton'ına yönlendiren computed property. SwiftUI, view body'si çalışırken her `AppTheme.*` erişimini otomatik kayıt altına alır ve değişince o view'ı doğrudan yeniler — eski `themeRevision` / `@AppStorage` hack'i tamamen kaldırıldı. Smoke build, Release archive ve Ad Hoc export geçti; yeni IPA `/private/tmp/RandevularimNativeAdHocExport_20260528_1506/Randevularim.ipa` olarak cihaza yüklendi ve launch edildi.
+
 ## Native iOS Özellik Durumu (2026-05-28)
 
 Flutter parity + üzeri tamamlandı:

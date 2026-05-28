@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Randevularım</title>
+  <style>
+    :root {
+      --bg: #0d0d1a;
+      --surface: #1a1a2e;
+      --primary: #496ed9;
+      --text: #f0f0f5;
+      --muted: rgba(255,255,255,0.55);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 32px;
+    }
+    h1 { font-size: 2rem; font-weight: 700; color: var(--primary); margin-bottom: 10px; }
+    p { color: var(--muted); margin-bottom: 32px; max-width: 420px; line-height: 1.6; }
+    nav { display: flex; gap: 16px; }
+    a {
+      background: var(--surface);
+      color: var(--primary);
+      text-decoration: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      border: 1px solid rgba(73,110,217,0.3);
+    }
+    a:hover { background: rgba(73,110,217,0.15); }
+  </style>
+</head>
+<body>
+  <h1>Randevularım</h1>
+  <p>Küçük işletmeler için hızlı ve basit randevu yönetimi. iOS native.</p>
+  <nav>
+    <a href="privacy.html">Gizlilik Politikası</a>
+    <a href="support.html">Destek</a>
+  </nav>
+</body>
+</html>

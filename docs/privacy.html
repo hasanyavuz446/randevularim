@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Randevularım – Gizlilik Politikası</title>
+  <style>
+    :root {
+      --bg: #0d0d1a;
+      --surface: #1a1a2e;
+      --primary: #496ed9;
+      --text: #f0f0f5;
+      --muted: rgba(255,255,255,0.55);
+      --border: rgba(255,255,255,0.09);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 0 16px 60px;
+    }
+    header {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 0 32px;
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 6px;
+    }
+    header p {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding-top: 36px;
+    }
+    section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 20px;
+    }
+    h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 12px;
+    }
+    p { margin-bottom: 10px; color: var(--text); }
+    p:last-child { margin-bottom: 0; }
+    ul {
+      padding-left: 20px;
+      margin-top: 6px;
+      margin-bottom: 10px;
+    }
+    li { margin-bottom: 6px; }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .highlight {
+      background: rgba(73,110,217,0.12);
+      border-left: 3px solid var(--primary);
+      padding: 10px 16px;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.92rem;
+      color: var(--text);
+    }
+    footer {
+      max-width: 720px;
+      margin: 40px auto 0;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Randevularım</h1>
+  <p>Gizlilik Politikası &mdash; Son güncelleme: 28 Mayıs 2026</p>
+</header>
+
+<main>
+
+  <section>
+    <h2>Genel Bakış</h2>
+    <p>
+      Randevularım, küçük işletmelerin müşteri ve randevu takibini kolaylaştırmak için
+      tasarlanmış bir iOS uygulamasıdır. Uygulamanın tüm verileri yalnızca
+      <strong>sizin cihazınızda</strong> saklanır; hiçbir sunucuya aktarılmaz,
+      üçüncü taraflarla paylaşılmaz ve izleme amacıyla kullanılmaz.
+    </p>
+    <div class="highlight">
+      Randevularım herhangi bir analitik araç, reklam SDK'sı veya uzak veritabanı
+      kullanmaz. İnternet bağlantısı gerektirmez.
+    </div>
+  </section>
+
+  <section>
+    <h2>Toplanan Veriler</h2>
+    <p>Uygulama yalnızca siz girdiğiniz verileri yerel olarak saklar:</p>
+    <ul>
+      <li>İşletme adı, çalışma saatleri ve hizmet listesi</li>
+      <li>Müşteri adları ve telefon numaraları</li>
+      <li>Randevu tarihi, saati, süresi, ücreti ve notları</li>
+    </ul>
+    <p>
+      Bu veriler Apple'ın SwiftData çerçevesi aracılığıyla yalnızca cihazınızda depolanır.
+      iCloud veya başka bir bulut hizmetiyle senkronize edilmez.
+    </p>
+  </section>
+
+  <section>
+    <h2>Rehber (Kişiler) Erişimi</h2>
+    <p>
+      Uygulama, rehberinizdeki kişileri müşteri olarak ekleyebilmek için isteğe bağlı
+      olarak rehber erişimi ister. Bu erişim yalnızca siz "Rehberden Aktar" özelliğini
+      kullandığınızda talep edilir.
+    </p>
+    <ul>
+      <li>Yalnızca <strong>ad</strong> ve <strong>telefon numarası</strong> okunur.</li>
+      <li>Okunan bilgiler yalnızca cihazınızdaki uygulama veritabanına kaydedilir.</li>
+      <li>Rehber verileri hiçbir sunucuya veya üçüncü tarafa gönderilmez.</li>
+    </ul>
+    <p>
+      İzni daha sonra geri almak için Ayarlar &gt; Gizlilik &amp; Güvenlik &gt; Kişiler
+      bölümünden uygulamaya verilen erişimi kapatabilirsiniz.
+    </p>
+  </section>
+
+  <section>
+    <h2>Bildirimler</h2>
+    <p>
+      Uygulama, randevu hatırlatmaları için yerel bildirimler gönderebilir. Bu bildirimler
+      tamamen cihazınız üzerinde oluşturulur; herhangi bir sunucu iletişimi gerektirmez.
+      Bildirimleri istediğiniz zaman iOS Ayarları üzerinden kapatabilirsiniz.
+    </p>
+  </section>
+
+  <section>
+    <h2>Verilerin Silinmesi</h2>
+    <p>
+      Tüm uygulama verilerini istediğiniz zaman silebilirsiniz:
+    </p>
+    <ul>
+      <li>
+        <strong>Uygulama içinden:</strong> Ayarlar &gt; Sıfırlama &gt; "Tüm Verileri Sıfırla"
+      </li>
+      <li>
+        <strong>iOS üzerinden:</strong> Uygulamayı cihazınızdan sildiğinizde tüm veriler
+        otomatik olarak kaldırılır.
+      </li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Çocukların Gizliliği</h2>
+    <p>
+      Uygulama 13 yaşın altındaki kullanıcılara yönelik değildir ve bu yaş grubundan
+      bilerek herhangi bir veri toplanmaz.
+    </p>
+  </section>
+
+  <section>
+    <h2>Bu Politikadaki Değişiklikler</h2>
+    <p>
+      Gizlilik politikamız güncellendiğinde bu sayfadaki "Son güncelleme" tarihi
+      değiştirilecektir. Önemli değişiklikler için uygulama güncellemesi notlarını
+      takip edebilirsiniz.
+    </p>
+  </section>
+
+  <section>
+    <h2>İletişim</h2>
+    <p>
+      Gizlilik politikamız hakkında sorularınız için:
+      <a href="mailto:yavuzzhasan@gmail.com">yavuzzhasan@gmail.com</a>
+    </p>
+  </section>
+
+</main>
+
+<footer>
+  <p>&copy; 2026 Randevularım. Tüm hakları saklıdır.</p>
+</footer>
+
+</body>
+</html>
