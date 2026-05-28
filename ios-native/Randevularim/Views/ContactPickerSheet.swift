@@ -121,7 +121,7 @@ struct ContactPickerSheet: View {
             }
         }
         .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "İsim veya telefon ara")
-        .scrollDismissesKeyboard(.immediately)
+        .scrollDismissesKeyboard(.never)
         .scrollContentBackground(.hidden)
         .background(AppTheme.background)
     }
