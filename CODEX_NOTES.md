@@ -175,6 +175,12 @@ Flutter parity + üzeri tamamlandı:
 - `com.hasanyavuz.randevularimold` → Flutter "oldRandevularım" (karşılaştırma amaçlı)
 - `com.hasanyavuz.randevularim2` → Silinebilir (eski test build)
 
+## App Store Connect URL'leri
+
+- **Gizlilik Politikası:** https://hasanyavuz446.github.io/randevularim/privacy.html
+- **Destek:** https://hasanyavuz446.github.io/randevularim/support.html
+- **GitHub repo:** https://github.com/hasanyavuz446/randevularim (public)
+
 ## Sonraki Olası Adım
 
 Kullanıcı birkaç değişiklik daha yaptıktan sonra yeni build isteyebilir. O zaman:
