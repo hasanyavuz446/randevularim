@@ -150,6 +150,11 @@ Flutter komutlarını paralel çalıştırma; startup lock nedeniyle bazen `ios/
 - 2026-05-28: Release hazırlık düzeltmeleri yapıldı (build 14): PrivacyInfo.xcprivacy eklendi (UserDefaults CA92.1), 3 yerde `tel://` force-unwrap crash koruması eklendi, CustomerDetailView WhatsApp URL `wa.me` formatına taşındı, iPhone Landscape yönü kaldırıldı (sadece Portrait), Release config'deki yazım hatası düzeltildi (duyulmaktadır), StatisticsView Divider hardcoded white → AppTheme.divider, Ayarlar'a uygulama versiyon bilgisi eklendi. Archive + Ad Hoc IPA `/private/tmp/RandevularimNativeAdHocExport_20260528_1527/Randevularim.ipa` olarak cihaza yüklendi.
 - 2026-05-28: Tema/mod değişiminde bazı view'ların (List satırları, sheet'ler, push'lanmış ekranlar) güncellenmemesi kökten düzeltildi. `AppTheme` static var'ları artık `@Observable final class ThemeValues` singleton'ına yönlendiren computed property. SwiftUI, view body'si çalışırken her `AppTheme.*` erişimini otomatik kayıt altına alır ve değişince o view'ı doğrudan yeniler — eski `themeRevision` / `@AppStorage` hack'i tamamen kaldırıldı. Smoke build, Release archive ve Ad Hoc export geçti; yeni IPA `/private/tmp/RandevularimNativeAdHocExport_20260528_1506/Randevularim.ipa` olarak cihaza yüklendi ve launch edildi.
 
+- 2026-05-28 (bu oturum): Simülatörde App Store ekran görüntüsü için `seedScreenshotDataIfNeeded` eklendi (`#if targetEnvironment(simulator)`). Gerçek cihazda çalışmaz.
+- 2026-05-28 (bu oturum): **StoreKit 2 abonelik sistemi** eklendi. `SubscriptionManager` (@Observable singleton) + `PaywallView`. `ContentView` status `.expired` ise PaywallView gösteriyor. Product ID'ler: `.subscription.monthly` / `.subscription.yearly` (`.pro.*` silindiğinden kullanılamaz). Trial: 14 gün (UserDefaults `subscription.firstLaunchDate`). Build 17 upload edildi, App Store'a "Waiting for Review" durumunda gönderildi.
+- 2026-05-28 (bu oturum): **Rehber/Kişi picker** düzeltmeleri: satırın tamamı tıklanabilir hale getirildi (Spacer() ile HStack genişletildi); scroll'da klavye kapanması düzeltildi (`.scrollDismissesKeyboard(.never)`).
+- 2026-05-28 (bu oturum): **iOS Takvim senkronizasyonu** eklendi. `CalendarSyncService` (@Observable singleton, EventKit): ilk senkronizasyonda "Randevularım" adında ayrı takvim oluşturulur, tüm randevular eklenir. Sonraki ekleme/güncelleme/silme otomatik yansır. Takvim ekranında sağ üstte takvim ikonu (sync başlatır), Ayarlar > Takvim bölümünden kaldırılabilir. `NSCalendarsFullAccessUsageDescription` build settings'e eklendi. Cihaza yüklendi.
+
 ## Native iOS Özellik Durumu (2026-05-28)
 
 Flutter parity + üzeri tamamlandı:
@@ -169,6 +174,9 @@ Flutter parity + üzeri tamamlandı:
 - **Rehberden aktarma**: İzin durumu kontrolü; reddedildiyse Ayarlar'a deeplink
 - **Demo veri kaldırıldı**: İlk açılışta sahte müşteri/randevu yok; sadece işletme + 6 varsayılan hizmet
 - **Veri sıfırlama**: Ayarlar'da "Tüm Verileri Sıfırla" butonu (onay dialoglu)
+- **Abonelik / Paywall**: StoreKit 2, 14 günlük trial, aylık ₺99 / yıllık ₺799
+- **iOS Takvim Sync**: EventKit, "Randevularım" takvimi, otomatik güncelleme
+- **Simülatör ekran görüntüsü seed**: `#if targetEnvironment(simulator)` korumalı örnek veri
 
 ### Karşılaştırma Kurulumu (Geçici)
 - `com.hasanyavuz.randevularim` → Native SwiftUI "Randevularım" (son build)
@@ -198,11 +206,13 @@ Flutter parity + üzeri tamamlandı:
 
 ## Sonraki Olası Adım
 
+Build 17 şu an App Store review'da ("Waiting for Review"). Sonuç bekleniyor.
+
 Kullanıcı birkaç değişiklik daha yaptıktan sonra yeni build isteyebilir. O zaman:
 
-1. Hangi hedefin build edileceğini netleştir: Flutter (`pubspec.yaml` şu an `1.0.0+9`) veya native SwiftUI (`ios-native` şu an `1.0.0 (13)`).
-2. Flutter değişikliği varsa `flutter analyze` ve `flutter test` çalıştır.
-3. Native değişikliği varsa aşağıdaki `xcodebuild` smoke build'i çalıştır.
+1. Native SwiftUI (`ios-native`) hedefi — Flutter artık ikincil.
+2. Native değişikliği varsa smoke build çalıştır, sonra build numarasını bump et (şu an 17), archive + upload.
+3. App Store Connect'te review'daki submission'ı iptal etmeden yeni build gönderilebilir — Apple en son build'i alır.
 
 **Native SwiftUI smoke build:**
 ```sh
@@ -215,18 +225,24 @@ xcodebuild -project ios-native/Randevularim.xcodeproj -scheme Randevularim -conf
 xcodebuild -exportArchive -archivePath /private/tmp/RandevularimNative.xcarchive -exportPath /private/tmp/RandevularimNativeUpload -exportOptionsPlist ios-native/ExportOptions-upload.plist
 ```
 
-**iOS Ad Hoc:**
+**Native Ad Hoc (cihaza yükleme):**
 ```sh
-flutter build ipa --release --export-method ad-hoc
-xcrun devicectl device install app --device 00008120-000E7CA40172201E /private/tmp/<audit-dir>/Payload/Runner.app
+xcodebuild -project ios-native/Randevularim.xcodeproj -scheme Randevularim -configuration Release -destination 'generic/platform=iOS' -archivePath /private/tmp/RandevularimNative.xcarchive archive
+xcodebuild -exportArchive -archivePath /private/tmp/RandevularimNative.xcarchive -exportPath /private/tmp/RandevularimNativeAdHoc_TARIH -exportOptionsPlist ios-native/ExportOptions-adhoc.plist
+xcrun devicectl device install app --device 00008120-000E7CA40172201E /private/tmp/RandevularimNativeAdHoc_TARIH/Randevularim.ipa
 xcrun devicectl device process launch --device 00008120-000E7CA40172201E com.hasanyavuz.randevularim
 ```
 
-**iOS TestFlight:**
+**Native Upload (App Store Connect):**
 ```sh
-flutter build ipa --release --export-options-plist ios/ExportOptions-appstore.plist
+xcodebuild -exportArchive -archivePath /private/tmp/RandevularimNative.xcarchive -exportPath /private/tmp/RandevularimNativeUpload -exportOptionsPlist ios-native/ExportOptions-upload.plist
 ```
-`ios/ExportOptions-appstore.plist` ayarları: `testFlightInternalTestingOnly: true`, `manageAppVersionAndBuildNumber: false`, `method: app-store-connect`
+`destination: upload` olduğu için IPA diske kaydedilmez, doğrudan App Store Connect'e yüklenir.
+
+**Build numarası bump:**
+```sh
+sed -i '' 's/CURRENT_PROJECT_VERSION = 17;/CURRENT_PROJECT_VERSION = 18;/g' ios-native/Randevularim.xcodeproj/project.pbxproj
+```
 
 TestFlight kurulumu şu an iOS 26.5 kaynaklı Apple altyapı sorunu nedeniyle çalışmıyor (case `102901090045`). Apple yanıtı gelene kadar cihaz testleri Ad Hoc ile yapılmalı.
 
