@@ -133,24 +133,12 @@ struct StatisticsView: View {
     }
 
     private var periodSelector: some View {
-        HStack(spacing: 0) {
+        Picker("", selection: $period) {
             ForEach(StatsPeriod.allCases, id: \.self) { p in
-                let isSelected = p == period
-                Button {
-                    period = p
-                } label: {
-                    Text(p.rawValue)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(isSelected ? .white : AppTheme.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(isSelected ? AppTheme.primary : Color.clear, in: RoundedRectangle(cornerRadius: 8))
-                }
-                .buttonStyle(.plain)
+                Text(p.rawValue).tag(p)
             }
         }
-        .padding(4)
-        .background(AppTheme.surface, in: RoundedRectangle(cornerRadius: 10))
+        .pickerStyle(.segmented)
     }
 
     private func isInPeriod(_ date: Date) -> Bool {
