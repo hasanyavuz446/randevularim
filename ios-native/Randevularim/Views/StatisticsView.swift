@@ -11,7 +11,6 @@ struct StatisticsView: View {
     @Query(sort: \Appointment.dateTime) private var appointments: [Appointment]
     @Query(sort: \Customer.name) private var customers: [Customer]
     @State private var period: StatsPeriod = .today
-    @AppStorage("themeRevision") private var themeRevision = 0
 
     private let calendar = Calendar.current
 
@@ -62,7 +61,6 @@ struct StatisticsView: View {
     }
 
     var body: some View {
-        let _ = themeRevision
         RandevularimScreen(title: "Raporlar") {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {

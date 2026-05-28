@@ -14,7 +14,6 @@ struct CalendarView: View {
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
     @State private var mode: CalendarMode = .day
     @State private var isShowingForm = false
-    @AppStorage("themeRevision") private var themeRevision = 0
 
     private var openingHour: Int {
         Int(businesses.first?.openingTime.split(separator: ":").first ?? "8") ?? 8
@@ -39,7 +38,6 @@ struct CalendarView: View {
     }
 
     var body: some View {
-        let _ = themeRevision
         RandevularimScreen(title: "Takvim") {
             VStack(spacing: 0) {
                 modeBar

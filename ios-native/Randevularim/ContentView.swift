@@ -10,8 +10,6 @@ struct ContentView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("selectedThemeId") private var selectedThemeId = "night_blue"
     @AppStorage("colorSchemePref") private var colorSchemePref = "dark"
-    @AppStorage("themeRevision") private var themeRevision = 0
-
     var body: some View {
         Group {
             if hasCompletedOnboarding {
@@ -27,22 +25,17 @@ struct ContentView: View {
             await NotificationScheduler.requestAuthorizationIfNeeded()
         }
         .onAppear { applyTheme() }
-        .onChange(of: selectedThemeId) { _, _ in applyTheme(refresh: true) }
-        .onChange(of: colorSchemePref) { _, _ in applyTheme(refresh: true) }
-        .onChange(of: systemColorScheme) { _, _ in
-            applyTheme(refresh: colorSchemePref == "auto")
-        }
+        .onChange(of: selectedThemeId) { _, _ in applyTheme() }
+        .onChange(of: colorSchemePref) { _, _ in applyTheme() }
+        .onChange(of: systemColorScheme) { _, _ in applyTheme() }
     }
 
-    private func applyTheme(refresh: Bool = false) {
+    private func applyTheme() {
         AppTheme.apply(
             id: selectedThemeId,
             colorSchemePref: colorSchemePref,
             systemColorScheme: systemColorScheme
         )
-        if refresh {
-            themeRevision += 1
-        }
     }
 }
 

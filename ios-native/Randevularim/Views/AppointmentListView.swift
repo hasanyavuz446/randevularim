@@ -7,7 +7,6 @@ struct AppointmentListView: View {
     @State private var isShowingForm = false
     @State private var searchText = ""
     @State private var filter: AppointmentListFilter = .upcoming
-    @AppStorage("themeRevision") private var themeRevision = 0
 
     private var filteredAppointments: [Appointment] {
         appointments.filter { appointment in
@@ -20,7 +19,6 @@ struct AppointmentListView: View {
     }
 
     var body: some View {
-        let _ = themeRevision
         RandevularimScreen(title: "Randevular") {
             List {
                 Section {

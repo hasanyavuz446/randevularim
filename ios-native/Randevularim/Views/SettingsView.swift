@@ -13,7 +13,6 @@ struct SettingsView: View {
     @AppStorage("defaultReminderMinutes") private var defaultReminderMinutes = 30
     @AppStorage("selectedThemeId") private var selectedThemeId = "night_blue"
     @AppStorage("colorSchemePref") private var colorSchemePref = "dark"
-    @AppStorage("themeRevision") private var themeRevision = 0
     @State private var isShowingBusinessForm = false
     @State private var exportDocument: BackupDocument?
     @State private var isShowingExporter = false
@@ -28,7 +27,6 @@ struct SettingsView: View {
     private var business: Business { businesses.first ?? Business.defaultBusiness() }
 
     var body: some View {
-        let _ = themeRevision
         RandevularimScreen(title: "Ayarlar") {
             List {
                 Section("Görünüm") {
@@ -239,7 +237,6 @@ struct SettingsView: View {
             colorSchemePref: colorSchemePref,
             systemColorScheme: systemColorScheme
         )
-        themeRevision += 1
     }
 
 }

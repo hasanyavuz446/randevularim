@@ -1,9 +1,10 @@
 import SwiftUI
+import Observation
 #if canImport(UIKit)
 import UIKit
 #endif
 
-// MARK: - Theme Config
+// MARK: - ThemeConfig
 
 struct ThemeConfig {
     let id: String
@@ -70,18 +71,39 @@ struct ThemeConfig {
     )
 }
 
+// MARK: - ThemeValues (Observable)
+// @Observable sayesinde bu nesnenin property'lerini okuyan her SwiftUI view,
+// değişince otomatik yeniden render edilir — themeRevision gibi hiçbir hack gerekmez.
+
+@Observable
+final class ThemeValues {
+    var primary: Color = Color(hex: "#496ED9")
+    var accent: Color = Color(hex: "#C9A84C")
+    var background: Color = Color(hex: "#0D0D1A")
+    var surface: Color = Color(hex: "#1A1A2E")
+    var secondarySurface: Color = Color(hex: "#23233A")
+    var textPrimary: Color = .white
+    var textSecondary: Color = Color.white.opacity(0.68)
+    var divider: Color = Color.white.opacity(0.10)
+    var isDark: Bool = true
+}
+
 // MARK: - AppTheme
 
 enum AppTheme {
-    static var primary = Color(hex: "#496ED9")
-    static var accent = Color(hex: "#C9A84C")
-    static var background = Color(hex: "#0D0D1A")
-    static var surface = Color(hex: "#1A1A2E")
-    static var secondarySurface = Color(hex: "#23233A")
-    static var textPrimary = Color.white
-    static var textSecondary = Color.white.opacity(0.68)
-    static var divider = Color.white.opacity(0.10)
-    static var isDark = true
+    // Tek shared instance; property erişimi @Observable tracking'i tetikler.
+    static let _state = ThemeValues()
+
+    static var primary: Color { _state.primary }
+    static var accent: Color { _state.accent }
+    static var background: Color { _state.background }
+    static var surface: Color { _state.surface }
+    static var secondarySurface: Color { _state.secondarySurface }
+    static var textPrimary: Color { _state.textPrimary }
+    static var textSecondary: Color { _state.textSecondary }
+    static var divider: Color { _state.divider }
+    static var isDark: Bool { _state.isDark }
+
     static let success = Color(hex: "#34C759")
     static let danger = Color(hex: "#FF3B30")
     static let warning = Color(hex: "#FF9500")
@@ -104,36 +126,38 @@ enum AppTheme {
             resolvedIsDark = systemColorScheme == .dark
         }
 
-        isDark = resolvedIsDark
-        primary = config.primary
-        accent = config.accent
+        _state.isDark = resolvedIsDark
+        _state.primary = config.primary
+        _state.accent = config.accent
         if resolvedIsDark {
-            background = config.darkBackground
-            surface = config.darkSurface
-            secondarySurface = Color(hex: config.darkSurfaceHex).mix(with: .white, by: 0.08)
-            textPrimary = .white
-            textSecondary = Color.white.opacity(0.68)
-            divider = Color.white.opacity(0.10)
+            _state.background = config.darkBackground
+            _state.surface = config.darkSurface
+            _state.secondarySurface = Color(hex: config.darkSurfaceHex).mix(with: .white, by: 0.08)
+            _state.textPrimary = .white
+            _state.textSecondary = Color.white.opacity(0.68)
+            _state.divider = Color.white.opacity(0.10)
         } else {
-            background = config.lightBackground
-            surface = Color.white
-            secondarySurface = Color(hex: "#E5E5EA")
-            textPrimary = Color(hex: "#1C1C1E")
-            textSecondary = Color.black.opacity(0.5)
-            divider = Color.black.opacity(0.08)
+            _state.background = config.lightBackground
+            _state.surface = .white
+            _state.secondarySurface = Color(hex: "#E5E5EA")
+            _state.textPrimary = Color(hex: "#1C1C1E")
+            _state.textSecondary = Color.black.opacity(0.5)
+            _state.divider = Color.black.opacity(0.08)
         }
+        #if canImport(UIKit)
         applyUIKitAppearance(colorSchemePref: colorSchemePref)
+        #endif
     }
 
     #if canImport(UIKit)
     @MainActor
     private static func applyUIKitAppearance(colorSchemePref: String) {
-        let backgroundUIColor = UIColor(background)
-        let surfaceUIColor = UIColor(surface)
-        let secondarySurfaceUIColor = UIColor(secondarySurface)
-        let textUIColor = UIColor(textPrimary)
-        let secondaryTextUIColor = UIColor(textSecondary)
-        let primaryUIColor = UIColor(primary)
+        let backgroundUIColor = UIColor(_state.background)
+        let surfaceUIColor = UIColor(_state.surface)
+        let secondarySurfaceUIColor = UIColor(_state.secondarySurface)
+        let textUIColor = UIColor(_state.textPrimary)
+        let secondaryTextUIColor = UIColor(_state.textSecondary)
+        let primaryUIColor = UIColor(_state.primary)
         let resolvedStyle: UIUserInterfaceStyle = {
             switch colorSchemePref {
             case "light": return .light
@@ -179,36 +203,9 @@ enum AppTheme {
                 window.overrideUserInterfaceStyle = resolvedStyle
                 window.tintColor = primaryUIColor
                 window.backgroundColor = backgroundUIColor
-                refresh(view: window)
                 window.rootViewController?.setNeedsStatusBarAppearanceUpdate()
                 window.setNeedsLayout()
             }
-    }
-
-    @MainActor
-    private static func refresh(view: UIView) {
-        if let tableView = view as? UITableView {
-            tableView.backgroundColor = UIColor(background)
-            tableView.visibleCells.forEach { cell in
-                cell.backgroundColor = UIColor(surface)
-                cell.contentView.backgroundColor = UIColor(surface)
-            }
-            tableView.reloadData()
-        } else if let collectionView = view as? UICollectionView {
-            collectionView.backgroundColor = UIColor(background)
-            collectionView.reloadData()
-        } else if let tabBar = view as? UITabBar {
-            tabBar.tintColor = UIColor(primary)
-            tabBar.unselectedItemTintColor = UIColor(textSecondary)
-            tabBar.setNeedsLayout()
-        } else if let navigationBar = view as? UINavigationBar {
-            navigationBar.tintColor = UIColor(primary)
-            navigationBar.setNeedsLayout()
-        }
-
-        view.setNeedsDisplay()
-        view.setNeedsLayout()
-        view.subviews.forEach(refresh)
     }
     #endif
 }
@@ -256,10 +253,8 @@ extension Color {
 struct RandevularimScreen<Content: View>: View {
     let title: String
     @ViewBuilder var content: Content
-    @AppStorage("themeRevision") private var themeRevision = 0
 
     var body: some View {
-        let _ = themeRevision
         NavigationStack {
             ZStack {
                 AppTheme.background.ignoresSafeArea()
