@@ -102,9 +102,9 @@ struct StatisticsView: View {
                             .font(.headline)
                         HStack {
                             reportValue(title: "Randevu", value: "\(thisMonthAppointments.count)")
-                            Divider().overlay(.white.opacity(0.12))
+                            Rectangle().fill(AppTheme.divider).frame(width: 1)
                             reportValue(title: "Ciro", value: monthRevenue.formatted(.currency(code: "TRY").precision(.fractionLength(0))))
-                            Divider().overlay(.white.opacity(0.12))
+                            Rectangle().fill(AppTheme.divider).frame(width: 1)
                             reportValue(title: "Ortalama", value: averageRevenueText)
                         }
                     }

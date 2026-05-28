@@ -183,7 +183,9 @@ struct AppointmentDetailView: View {
 
             Section("İletişim") {
                 Button {
-                    openURL(URL(string: "tel://\(appointment.customerPhone.filter(\.isNumber))")!)
+                    let digits = appointment.customerPhone.filter(\.isNumber)
+                    guard !digits.isEmpty, let url = URL(string: "tel://\(digits)") else { return }
+                    openURL(url)
                 } label: {
                     Label("Ara", systemImage: "phone.fill")
                 }

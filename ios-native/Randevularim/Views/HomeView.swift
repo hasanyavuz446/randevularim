@@ -219,7 +219,8 @@ private struct HeroAppointmentCard: View {
                 VStack(spacing: 10) {
                     heroActionButton(systemImage: "phone.fill") {
                         let digits = appointment.customerPhone.filter(\.isNumber)
-                        openURL(URL(string: "tel://\(digits)")!)
+                        guard !digits.isEmpty, let url = URL(string: "tel://\(digits)") else { return }
+                        openURL(url)
                     }
                     heroActionButton(systemImage: "message.fill") {
                         let digits = appointment.customerPhone.filter(\.isNumber)

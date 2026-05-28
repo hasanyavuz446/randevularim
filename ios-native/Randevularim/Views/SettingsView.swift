@@ -117,6 +117,15 @@ struct SettingsView: View {
                     }
                 }
 
+                Section {
+                    HStack {
+                        Text("Sürüm")
+                        Spacer()
+                        Text(appVersionString)
+                            .foregroundStyle(AppTheme.textSecondary)
+                    }
+                }
+
                 if let statusMessage {
                     Section {
                         Text(statusMessage).foregroundStyle(AppTheme.textSecondary)
@@ -198,6 +207,12 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    private var appVersionString: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "0"
+        return "\(version) (\(build))"
     }
 
     private func applyTheme(id: String, colorSchemePref: String) {

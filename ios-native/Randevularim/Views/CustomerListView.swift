@@ -165,10 +165,16 @@ private struct CustomerDetailView: View {
 
             Section("İletişim") {
                 Button("Ara") {
-                    openURL(URL(string: "tel://\(customer.phone.filter(\.isNumber))")!)
+                    let digits = customer.phone.filter(\.isNumber)
+                    guard !digits.isEmpty, let url = URL(string: "tel://\(digits)") else { return }
+                    openURL(url)
                 }
                 Button("WhatsApp") {
-                    openURL(URL(string: "whatsapp://send?phone=90\(customer.phone.filter(\.isNumber))")!)
+                    let digits = customer.phone.filter(\.isNumber)
+                    guard !digits.isEmpty else { return }
+                    let normalized = digits.hasPrefix("0") ? "9\(digits)" : (digits.hasPrefix("90") ? digits : "90\(digits)")
+                    guard let url = URL(string: "https://wa.me/\(normalized)") else { return }
+                    openURL(url)
                 }
                 Button("Bu Müşteriye Randevu Ekle") {
                     isShowingAppointmentForm = true
