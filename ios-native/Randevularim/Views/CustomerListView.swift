@@ -10,6 +10,7 @@ struct CustomerListView: View {
     @State private var isShowingAppointmentForm = false
     @State private var searchText = ""
     @State private var pendingDeletion: Customer?
+    @AppStorage("themeRevision") private var themeRevision = 0
 
     private var filteredCustomers: [Customer] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -23,6 +24,7 @@ struct CustomerListView: View {
     }
 
     var body: some View {
+        let _ = themeRevision
         RandevularimScreen(title: "Müşteriler") {
             List {
                 if filteredCustomers.isEmpty {

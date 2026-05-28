@@ -39,6 +39,38 @@ enum SeedDataService {
         Service.defaults.forEach(context.insert)
         try context.save()
     }
+
+    @MainActor
+    static func deleteAllCustomers(in context: ModelContext) throws -> Int {
+        let appointments = try context.fetch(FetchDescriptor<Appointment>())
+        appointments.forEach {
+            NotificationScheduler.cancel(for: $0)
+            context.delete($0)
+        }
+
+        let customers = try context.fetch(FetchDescriptor<Customer>())
+        customers.forEach(context.delete)
+
+        try context.save()
+        return customers.count
+    }
+
+    @MainActor
+    static func deletePastAppointments(in context: ModelContext, before date: Date = .now) throws -> Int {
+        let descriptor = FetchDescriptor<Appointment>(
+            predicate: #Predicate { appointment in
+                appointment.dateTime < date
+            }
+        )
+        let appointments = try context.fetch(descriptor)
+        appointments.forEach {
+            NotificationScheduler.cancel(for: $0)
+            context.delete($0)
+        }
+
+        try context.save()
+        return appointments.count
+    }
 }
 
 struct BackupSnapshot: Codable {

@@ -14,6 +14,7 @@ struct CalendarView: View {
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
     @State private var mode: CalendarMode = .day
     @State private var isShowingForm = false
+    @AppStorage("themeRevision") private var themeRevision = 0
 
     private var openingHour: Int {
         Int(businesses.first?.openingTime.split(separator: ":").first ?? "8") ?? 8
@@ -38,6 +39,7 @@ struct CalendarView: View {
     }
 
     var body: some View {
+        let _ = themeRevision
         RandevularimScreen(title: "Takvim") {
             VStack(spacing: 0) {
                 modeBar
@@ -73,12 +75,7 @@ struct CalendarView: View {
 
     private var modeBar: some View {
         HStack(spacing: 10) {
-            Picker("", selection: $mode) {
-                ForEach(CalendarMode.allCases, id: \.self) { m in
-                    Text(m.rawValue).tag(m)
-                }
-            }
-            .pickerStyle(.segmented)
+            ThemeSegmentedControl(selection: $mode)
             Button("Bugün") {
                 selectedDate = Calendar.current.startOfDay(for: .now)
             }
@@ -141,7 +138,7 @@ struct CalendarView: View {
                         VStack(spacing: 3) {
                             Text("\(cal.component(.day, from: day))")
                                 .font(.system(size: 16, weight: isToday || isSelected ? .bold : .regular))
-                                .foregroundStyle(isSelected ? .white : isToday ? AppTheme.primary : .primary)
+                                .foregroundStyle(isSelected ? .white : isToday ? AppTheme.primary : AppTheme.textPrimary)
                                 .frame(width: 34, height: 34)
                                 .background {
                                     if isSelected {
@@ -276,7 +273,7 @@ private struct DayTimelineView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(appointment.customerName)
                         .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(isDim ? AppTheme.textSecondary : .primary)
+                        .foregroundStyle(isDim ? AppTheme.textSecondary : AppTheme.textPrimary)
                         .strikethrough(isDim)
                         .lineLimit(1)
                     if cardHeight > 50 {
@@ -355,7 +352,7 @@ private struct DayAgendaSection: View {
             HStack(spacing: 8) {
                 Text(day.formatted(.dateTime.day().month(.wide).weekday(.wide).locale(Locale(identifier: "tr_TR"))))
                     .font(.subheadline.weight(.bold))
-                    .foregroundStyle(isToday ? AppTheme.primary : .primary)
+                    .foregroundStyle(isToday ? AppTheme.primary : AppTheme.textPrimary)
                 if isToday {
                     Text("BUGÜN")
                         .font(.system(size: 9, weight: .bold))
@@ -395,7 +392,7 @@ private struct AgendaCard: View {
         HStack(spacing: 12) {
             Text(appointment.dateTime.formatted(date: .omitted, time: .shortened))
                 .font(.subheadline.weight(.bold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(AppTheme.textPrimary)
                 .frame(width: 50, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -487,7 +484,7 @@ private struct MonthCalendarView: View {
                     HStack {
                         Text(selectedDate.formatted(.dateTime.day().month(.wide).weekday(.wide).locale(Locale(identifier: "tr_TR"))))
                             .font(.subheadline.weight(.bold))
-                            .foregroundStyle(cal.isDateInToday(selectedDate) ? AppTheme.primary : .primary)
+                            .foregroundStyle(cal.isDateInToday(selectedDate) ? AppTheme.primary : AppTheme.textPrimary)
                         if cal.isDateInToday(selectedDate) {
                             Text("BUGÜN")
                                 .font(.system(size: 9, weight: .bold))
@@ -610,7 +607,7 @@ private struct DayCell: View {
     private var labelColor: Color {
         if isSelected { return .white }
         if isToday { return AppTheme.primary }
-        return .primary
+        return AppTheme.textPrimary
     }
 
     @ViewBuilder

@@ -6,6 +6,7 @@ struct HomeView: View {
     @Query(sort: \Business.name) private var businesses: [Business]
     @Query(sort: \Appointment.dateTime) private var appointments: [Appointment]
     @AppStorage("activeTabIndex") private var activeTabIndex = 0
+    @AppStorage("themeRevision") private var themeRevision = 0
     @State private var isShowingForm = false
 
     private var business: Business { businesses.first ?? Business.defaultBusiness() }
@@ -39,6 +40,7 @@ struct HomeView: View {
     }
 
     var body: some View {
+        let _ = themeRevision
         RandevularimScreen(title: "Randevularım") {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {

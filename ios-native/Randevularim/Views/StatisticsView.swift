@@ -11,6 +11,7 @@ struct StatisticsView: View {
     @Query(sort: \Appointment.dateTime) private var appointments: [Appointment]
     @Query(sort: \Customer.name) private var customers: [Customer]
     @State private var period: StatsPeriod = .today
+    @AppStorage("themeRevision") private var themeRevision = 0
 
     private let calendar = Calendar.current
 
@@ -61,6 +62,7 @@ struct StatisticsView: View {
     }
 
     var body: some View {
+        let _ = themeRevision
         RandevularimScreen(title: "Raporlar") {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
@@ -133,12 +135,7 @@ struct StatisticsView: View {
     }
 
     private var periodSelector: some View {
-        Picker("", selection: $period) {
-            ForEach(StatsPeriod.allCases, id: \.self) { p in
-                Text(p.rawValue).tag(p)
-            }
-        }
-        .pickerStyle(.segmented)
+        ThemeSegmentedControl(selection: $period)
     }
 
     private func isInPeriod(_ date: Date) -> Bool {

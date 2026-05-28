@@ -6,14 +6,16 @@ import ActivityKit
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var systemColorScheme
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
-    @AppStorage("themeVersion") private var themeVersion = 0
+    @AppStorage("selectedThemeId") private var selectedThemeId = "night_blue"
+    @AppStorage("colorSchemePref") private var colorSchemePref = "dark"
+    @AppStorage("themeRevision") private var themeRevision = 0
 
     var body: some View {
         Group {
             if hasCompletedOnboarding {
                 MainTabsView()
-                    .id(themeVersion)
             } else {
                 OnboardingView {
                     hasCompletedOnboarding = true
@@ -23,6 +25,23 @@ struct ContentView: View {
         .task {
             SeedDataService.seedIfNeeded(in: modelContext)
             await NotificationScheduler.requestAuthorizationIfNeeded()
+        }
+        .onAppear { applyTheme() }
+        .onChange(of: selectedThemeId) { _, _ in applyTheme(refresh: true) }
+        .onChange(of: colorSchemePref) { _, _ in applyTheme(refresh: true) }
+        .onChange(of: systemColorScheme) { _, _ in
+            applyTheme(refresh: colorSchemePref == "auto")
+        }
+    }
+
+    private func applyTheme(refresh: Bool = false) {
+        AppTheme.apply(
+            id: selectedThemeId,
+            colorSchemePref: colorSchemePref,
+            systemColorScheme: systemColorScheme
+        )
+        if refresh {
+            themeRevision += 1
         }
     }
 }
@@ -104,7 +123,7 @@ private struct OnboardingView: View {
                                 .foregroundStyle(AppTheme.accent)
                             Text(slides[index].1)
                                 .font(.largeTitle.bold())
-                                .foregroundStyle(.white)
+                                .foregroundStyle(AppTheme.textPrimary)
                             Text(slides[index].2)
                                 .font(.body)
                                 .multilineTextAlignment(.center)

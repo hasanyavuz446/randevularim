@@ -6,13 +6,14 @@ import Contacts
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.openURL) private var openURL
+    @Environment(\.colorScheme) private var systemColorScheme
     @Query(sort: \Business.name) private var businesses: [Business]
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
     @AppStorage("globalNotificationsEnabled") private var globalNotificationsEnabled = true
     @AppStorage("defaultReminderMinutes") private var defaultReminderMinutes = 30
     @AppStorage("selectedThemeId") private var selectedThemeId = "night_blue"
-    @AppStorage("themeVersion") private var themeVersion = 0
     @AppStorage("colorSchemePref") private var colorSchemePref = "dark"
+    @AppStorage("themeRevision") private var themeRevision = 0
     @State private var isShowingBusinessForm = false
     @State private var exportDocument: BackupDocument?
     @State private var isShowingExporter = false
@@ -21,54 +22,35 @@ struct SettingsView: View {
     @State private var isShowingContactsAlert = false
     @State private var isImportingContacts = false
     @State private var isShowingResetConfirm = false
+    @State private var isShowingDeleteCustomersConfirm = false
+    @State private var isShowingDeletePastAppointmentsConfirm = false
 
     private var business: Business { businesses.first ?? Business.defaultBusiness() }
 
     var body: some View {
+        let _ = themeRevision
         RandevularimScreen(title: "Ayarlar") {
             List {
                 Section("Görünüm") {
-                    Picker("Renk Modu", selection: Binding(
-                        get: { colorSchemePref },
-                        set: { newValue in
-                            colorSchemePref = newValue
-                            AppTheme.apply(id: selectedThemeId, colorSchemePref: newValue)
-                        }
-                    )) {
-                        Text("Açık").tag("light")
-                        Text("Koyu").tag("dark")
-                        Text("Otomatik").tag("auto")
+                    AppearancePicker(selected: colorSchemePref) { newValue in
+                        colorSchemePref = newValue
+                        applyTheme(id: selectedThemeId, colorSchemePref: newValue)
                     }
-                    .pickerStyle(.segmented)
+                    .listRowInsets(EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12))
 
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 14) {
                         ForEach(ThemeConfig.all, id: \.id) { config in
-                            VStack(spacing: 4) {
-                                Circle()
-                                    .fill(config.primary)
-                                    .frame(width: 40, height: 40)
-                                    .overlay {
-                                        if selectedThemeId == config.id {
-                                            Image(systemName: "checkmark")
-                                                .font(.system(size: 14, weight: .bold))
-                                                .foregroundStyle(.white)
-                                        }
-                                    }
-                                    .overlay {
-                                        Circle().strokeBorder(selectedThemeId == config.id ? .white : .clear, lineWidth: 2)
-                                    }
-                                Text(config.name)
-                                    .font(.system(size: 9))
-                                    .foregroundStyle(AppTheme.textSecondary)
-                                    .lineLimit(1)
-                            }
-                            .onTapGesture {
+                            ThemeSwatch(
+                                config: config,
+                                isSelected: selectedThemeId == config.id
+                            ) {
                                 selectedThemeId = config.id
-                                AppTheme.apply(id: config.id, colorSchemePref: colorSchemePref)
+                                applyTheme(id: config.id, colorSchemePref: colorSchemePref)
                             }
                         }
                     }
                     .padding(.vertical, 6)
+                    .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 12, trailing: 12))
                 }
 
                 Section("İşletme") {
@@ -133,7 +115,15 @@ struct SettingsView: View {
                     Button("Onboarding'i Tekrar Göster") { hasCompletedOnboarding = false }
                 }
 
-                Section {
+                Section("Sıfırlama") {
+                    Button("Kayıtlı Tüm Müşterileri Sil", role: .destructive) {
+                        isShowingDeleteCustomersConfirm = true
+                    }
+
+                    Button("Geçmiş Tüm Randevuları Sil", role: .destructive) {
+                        isShowingDeletePastAppointmentsConfirm = true
+                    }
+
                     Button("Tüm Verileri Sıfırla", role: .destructive) {
                         isShowingResetConfirm = true
                     }
@@ -175,7 +165,7 @@ struct SettingsView: View {
                     statusMessage = "Yedek geri yüklenemedi: \(error.localizedDescription)"
                 }
             }
-            .confirmationDialog("Tüm Verileri Sıfırla", isPresented: $isShowingResetConfirm, titleVisibility: .visible) {
+            .alert("Tüm Verileri Sıfırla", isPresented: $isShowingResetConfirm) {
                 Button("Sıfırla", role: .destructive) {
                     do {
                         try SeedDataService.resetAllData(in: modelContext)
@@ -188,6 +178,32 @@ struct SettingsView: View {
             } message: {
                 Text("Tüm müşteriler, randevular ve özel hizmetler silinir. İşletme bilgileri ve varsayılan hizmetler yeniden oluşturulur. Bu işlem geri alınamaz.")
             }
+            .alert("Kayıtlı Tüm Müşterileri Sil", isPresented: $isShowingDeleteCustomersConfirm) {
+                Button("Müşterileri Sil", role: .destructive) {
+                    do {
+                        let count = try SeedDataService.deleteAllCustomers(in: modelContext)
+                        statusMessage = "\(count) müşteri ve bağlı randevuları silindi."
+                    } catch {
+                        statusMessage = "Müşteriler silinemedi: \(error.localizedDescription)"
+                    }
+                }
+                Button("Vazgeç", role: .cancel) {}
+            } message: {
+                Text("Kayıtlı tüm müşteriler ve bu müşterilere bağlı randevular silinir. Hizmetler ve işletme ayarları korunur. Bu işlem geri alınamaz.")
+            }
+            .alert("Geçmiş Tüm Randevuları Sil", isPresented: $isShowingDeletePastAppointmentsConfirm) {
+                Button("Geçmiş Randevuları Sil", role: .destructive) {
+                    do {
+                        let count = try SeedDataService.deletePastAppointments(in: modelContext)
+                        statusMessage = "\(count) geçmiş randevu silindi."
+                    } catch {
+                        statusMessage = "Geçmiş randevular silinemedi: \(error.localizedDescription)"
+                    }
+                }
+                Button("Vazgeç", role: .cancel) {}
+            } message: {
+                Text("Bugünden önceki randevular silinir. Bugünkü ve gelecek randevular korunur. Bu işlem geri alınamaz.")
+            }
             .alert("Rehber Erişimi Gerekli", isPresented: $isShowingContactsAlert) {
                 Button("Ayarları Aç") {
                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
@@ -196,9 +212,6 @@ struct SettingsView: View {
             } message: {
                 Text("Rehbere erişim izni verilmemiş. Ayarlar > Gizlilik > Kişiler bölümünden izin verin.")
             }
-        }
-        .onDisappear {
-            themeVersion += 1
         }
     }
 
@@ -220,6 +233,100 @@ struct SettingsView: View {
         }
     }
 
+    private func applyTheme(id: String, colorSchemePref: String) {
+        AppTheme.apply(
+            id: id,
+            colorSchemePref: colorSchemePref,
+            systemColorScheme: systemColorScheme
+        )
+        themeRevision += 1
+    }
+
+}
+
+// MARK: - Appearance
+
+private struct AppearancePicker: View {
+    let selected: String
+    let onSelect: (String) -> Void
+
+    private let options = [
+        ("light", "sun.max.fill", "Açık"),
+        ("dark", "moon.stars.fill", "Koyu"),
+        ("auto", "circle.lefthalf.filled", "Otomatik")
+    ]
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(options, id: \.0) { option in
+                let isSelected = selected == option.0
+                Button {
+                    onSelect(option.0)
+                } label: {
+                    VStack(spacing: 6) {
+                        Image(systemName: option.1)
+                            .font(.system(size: 18, weight: .semibold))
+                        Text(option.2)
+                            .font(.caption.weight(.semibold))
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 62)
+                    .foregroundStyle(isSelected ? .white : AppTheme.textSecondary)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(isSelected ? AppTheme.primary : AppTheme.secondarySurface)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .strokeBorder(isSelected ? AppTheme.primary : AppTheme.divider, lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+}
+
+private struct ThemeSwatch: View {
+    let config: ThemeConfig
+    let isSelected: Bool
+    let onSelect: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(spacing: 6) {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [config.primary, config.accent],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(height: 52)
+                    .overlay {
+                        if isSelected {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(isSelected ? AppTheme.primary : .clear, lineWidth: 3)
+                    )
+                    .shadow(color: isSelected ? config.primary.opacity(0.32) : .clear, radius: 8, y: 3)
+
+                Text(config.name)
+                    .font(.system(size: 9, weight: isSelected ? .bold : .regular))
+                    .foregroundStyle(isSelected ? AppTheme.primary : AppTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .frame(minHeight: 22)
+            }
+        }
+        .buttonStyle(.plain)
+    }
 }
 
 // MARK: - Service Management

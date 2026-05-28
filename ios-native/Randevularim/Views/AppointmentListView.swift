@@ -7,6 +7,7 @@ struct AppointmentListView: View {
     @State private var isShowingForm = false
     @State private var searchText = ""
     @State private var filter: AppointmentListFilter = .upcoming
+    @AppStorage("themeRevision") private var themeRevision = 0
 
     private var filteredAppointments: [Appointment] {
         appointments.filter { appointment in
@@ -19,15 +20,11 @@ struct AppointmentListView: View {
     }
 
     var body: some View {
+        let _ = themeRevision
         RandevularimScreen(title: "Randevular") {
             List {
                 Section {
-                    Picker("Filtre", selection: $filter) {
-                        ForEach(AppointmentListFilter.allCases) { filter in
-                            Text(filter.label).tag(filter)
-                        }
-                    }
-                    .pickerStyle(.segmented)
+                    ThemeSegmentedControl(selection: $filter)
                     .listRowBackground(AppTheme.background)
                 }
 
@@ -79,18 +76,16 @@ struct AppointmentListView: View {
 }
 
 private enum AppointmentListFilter: String, CaseIterable, Identifiable {
-    case upcoming, today, completed, cancelled, all
+    case upcoming = "Yaklaşan"
+    case today = "Bugün"
+    case completed = "Biten"
+    case cancelled = "İptal"
+    case all = "Tümü"
 
     var id: String { rawValue }
 
     var label: String {
-        switch self {
-        case .upcoming: "Yaklaşan"
-        case .today: "Bugün"
-        case .completed: "Biten"
-        case .cancelled: "İptal"
-        case .all: "Tümü"
-        }
+        rawValue
     }
 
     func matches(_ appointment: Appointment) -> Bool {
@@ -215,7 +210,7 @@ struct AppointmentDetailView: View {
         .sheet(isPresented: $isShowingEdit) {
             AppointmentFormView(appointment: appointment)
         }
-        .confirmationDialog("WhatsApp Mesajı", isPresented: $showWhatsAppSheet, titleVisibility: .visible) {
+        .alert("WhatsApp Mesajı", isPresented: $showWhatsAppSheet) {
             Button("Yeni Randevu Mesajı") { sendWhatsApp(template: .newAppointment) }
             Button("Randevu Hatırlatması") { sendWhatsApp(template: .reminder) }
             Button("Vazgeç", role: .cancel) {}
@@ -553,7 +548,7 @@ struct AppointmentFormView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
             .background(durationMinutes == mins ? AppTheme.primary : AppTheme.secondarySurface, in: Capsule())
-            .foregroundStyle(durationMinutes == mins ? .white : .primary)
+            .foregroundStyle(durationMinutes == mins ? .white : AppTheme.textPrimary)
             .buttonStyle(.plain)
     }
 
