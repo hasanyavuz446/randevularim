@@ -16,8 +16,8 @@ import StoreKit
     private(set) var isPurchasing = false
     private(set) var purchaseError: String?
 
-    static let monthlyId = "com.hasanyavuz.randevularim.pro.monthly"
-    static let yearlyId  = "com.hasanyavuz.randevularim.pro.yearly"
+    static let monthlyId = "com.hasanyavuz.randevularim.subscription.monthly"
+    static let yearlyId  = "com.hasanyavuz.randevularim.subscription.yearly"
     private static let trialDays = 15
     private static let firstLaunchKey = "subscription.firstLaunchDate"
 
