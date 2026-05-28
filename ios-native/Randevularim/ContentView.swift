@@ -10,19 +10,25 @@ struct ContentView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("selectedThemeId") private var selectedThemeId = "night_blue"
     @AppStorage("colorSchemePref") private var colorSchemePref = "dark"
+
+    private let subscriptionManager = SubscriptionManager.shared
+
     var body: some View {
         Group {
-            if hasCompletedOnboarding {
-                MainTabsView()
-            } else {
+            if !hasCompletedOnboarding {
                 OnboardingView {
                     hasCompletedOnboarding = true
                 }
+            } else if subscriptionManager.isAccessGranted {
+                MainTabsView()
+            } else {
+                PaywallView()
             }
         }
         .task {
             SeedDataService.seedIfNeeded(in: modelContext)
             await NotificationScheduler.requestAuthorizationIfNeeded()
+            await subscriptionManager.initialize()
         }
         .onAppear { applyTheme() }
         .onChange(of: selectedThemeId) { _, _ in applyTheme() }
