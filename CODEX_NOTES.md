@@ -181,6 +181,21 @@ Flutter parity + üzeri tamamlandı:
 - **Destek:** https://hasanyavuz446.github.io/randevularim/support.html
 - **GitHub repo:** https://github.com/hasanyavuz446/randevularim (public)
 
+## Abonelik Sistemi (2026-05-28)
+
+- Model: 14 günlük ücretsiz deneme → aylık ₺99 veya yıllık ₺799
+- Uygulama kendisi ücretsiz (₺0), abonelik zorunlu deneme bittikten sonra
+- Subscription Group: `Randevularım Pro` (ID: 22119622)
+- Aylık Product ID: `com.hasanyavuz.randevularim.subscription.monthly`
+- Yıllık Product ID: `com.hasanyavuz.randevularim.subscription.yearly`
+- Her ikisinde de 2 Weeks (14 gün) Free introductory offer var
+- `SubscriptionManager` (@Observable singleton): StoreKit 2, trial tracking (UserDefaults `subscription.firstLaunchDate`), purchase/restore
+- `PaywallView`: aylık/yıllık plan seçimi, "15 Gün Ücretsiz Başla" butonu
+- `ContentView`: `status == .expired` ise PaywallView gösterir, loading/trial/subscribed ise MainTabsView
+- Build 17: abonelikler + paywall dahil, App Store'a submit edildi
+
+**Not:** Silinen product ID'ler Apple'da kalıcı rezerve edilir. `.pro.monthly` ve `.pro.yearly` kullanılamaz.
+
 ## Sonraki Olası Adım
 
 Kullanıcı birkaç değişiklik daha yaptıktan sonra yeni build isteyebilir. O zaman:
