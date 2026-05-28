@@ -30,6 +30,7 @@
 		100000000000000000000125 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000223 /* PrivacyInfo.xcprivacy */; };
 		100000000000000000000126 /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000224 /* SubscriptionManager.swift */; };
 		100000000000000000000127 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000225 /* PaywallView.swift */; };
+		100000000000000000000128 /* CalendarSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000226 /* CalendarSyncService.swift */; };
 		100000000000000000000121 /* AppointmentActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000218 /* AppointmentActivityAttributes.swift */; };
 		100000000000000000000122 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000219 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -85,6 +86,7 @@
 		100000000000000000000223 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = "text.xml"; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		100000000000000000000224 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
 		100000000000000000000225 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
+		100000000000000000000226 /* CalendarSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSyncService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -148,6 +150,7 @@
 			children = (
 				100000000000000000000209 /* AppStore.swift */,
 				100000000000000000000224 /* SubscriptionManager.swift */,
+				100000000000000000000226 /* CalendarSyncService.swift */,
 			);
 			path = Store;
 			sourceTree = "<group>";
@@ -331,6 +334,7 @@
 				100000000000000000000124 /* ContactPickerSheet.swift in Sources */,
 				100000000000000000000126 /* SubscriptionManager.swift in Sources */,
 				100000000000000000000127 /* PaywallView.swift in Sources */,
+				100000000000000000000128 /* CalendarSyncService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -420,6 +424,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Randevularım";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Rehberinizdeki kişileri müşteri olarak ekleyebilmek için rehber erişimine ihtiyaç duyulmaktadır.";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Randevularınızı telefon takviminize ekleyebilmek için takvim erişimine ihtiyaç duyulmaktadır.";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -451,6 +456,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Randevularım";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Rehberinizdeki kişileri müşteri olarak ekleyebilmek için rehber erişimine ihtiyaç duyulmaktadır.";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Randevularınızı telefon takviminize ekleyebilmek için takvim erişimine ihtiyaç duyulmaktadır.";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

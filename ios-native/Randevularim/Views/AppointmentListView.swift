@@ -67,6 +67,7 @@ struct AppointmentListView: View {
         for index in offsets {
             let appointment = filteredAppointments[index]
             NotificationScheduler.cancel(for: appointment)
+            CalendarSyncService.shared.remove(appointment)
             modelContext.delete(appointment)
         }
         try? modelContext.save()
@@ -269,6 +270,7 @@ struct AppointmentDetailView: View {
     private func persistAppointmentChange() {
         try? modelContext.save()
         NotificationScheduler.schedule(for: appointment)
+        CalendarSyncService.shared.update(appointment)
     }
 
     private func reminderLabel(_ minutes: Int) -> String {
@@ -592,7 +594,9 @@ struct AppointmentFormView: View {
             appointment.startNotificationEnabled = startNotificationEnabled
             try? modelContext.save()
             NotificationScheduler.schedule(for: appointment)
+            CalendarSyncService.shared.update(appointment)
         } else {
+            var newAppointments: [Appointment] = []
             for week in 0..<weeklyRepeatCount {
                 guard let apptDate = Calendar.current.date(byAdding: .weekOfYear, value: week, to: dateTime) else { continue }
                 let newAppointment = Appointment(
@@ -613,8 +617,10 @@ struct AppointmentFormView: View {
                 )
                 modelContext.insert(newAppointment)
                 NotificationScheduler.schedule(for: newAppointment)
+                newAppointments.append(newAppointment)
             }
             try? modelContext.save()
+            newAppointments.forEach { CalendarSyncService.shared.add($0) }
         }
         dismiss()
     }

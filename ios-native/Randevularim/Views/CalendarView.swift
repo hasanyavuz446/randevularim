@@ -14,6 +14,10 @@ struct CalendarView: View {
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
     @State private var mode: CalendarMode = .day
     @State private var isShowingForm = false
+    @State private var isSyncing = false
+    @State private var syncMessage: String?
+
+    private let calendarSync = CalendarSyncService.shared
 
     private var openingHour: Int {
         Int(businesses.first?.openingTime.split(separator: ":").first ?? "8") ?? 8
@@ -63,8 +67,31 @@ struct CalendarView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { isShowingForm = true } label: { Image(systemName: "plus") }
+                HStack(spacing: 16) {
+                    Button {
+                        Task {
+                            isSyncing = true
+                            let ok = await calendarSync.syncAll(appointments: appointments)
+                            syncMessage = ok ? "Takvim senkronize edildi." : "Takvim erişimi reddedildi."
+                            isSyncing = false
+                        }
+                    } label: {
+                        if isSyncing {
+                            ProgressView().tint(AppTheme.primary)
+                        } else {
+                            Image(systemName: calendarSync.isEnabled ? "calendar.badge.checkmark" : "calendar.badge.plus")
+                        }
+                    }
+                    .disabled(isSyncing)
+
+                    Button { isShowingForm = true } label: { Image(systemName: "plus") }
+                }
             }
+        }
+        .alert("Takvim", isPresented: Binding(get: { syncMessage != nil }, set: { if !$0 { syncMessage = nil } })) {
+            Button("Tamam", role: .cancel) { syncMessage = nil }
+        } message: {
+            Text(syncMessage ?? "")
         }
         .sheet(isPresented: $isShowingForm) {
             AppointmentFormView(initialDate: selectedDate)

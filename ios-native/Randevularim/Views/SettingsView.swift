@@ -103,6 +103,19 @@ struct SettingsView: View {
                     Button("Onboarding'i Tekrar Göster") { hasCompletedOnboarding = false }
                 }
 
+                Section("Takvim") {
+                    if CalendarSyncService.shared.isEnabled {
+                        Button("Takvim Senkronizasyonunu Kaldır", role: .destructive) {
+                            CalendarSyncService.shared.removeAll()
+                            statusMessage = "Takvim senkronizasyonu kaldırıldı."
+                        }
+                    } else {
+                        Text("Takvim senkronizasyonu kapalı. Takvim ekranındaki takvim ikonuna basarak başlatabilirsiniz.")
+                            .font(.caption)
+                            .foregroundStyle(AppTheme.textSecondary)
+                    }
+                }
+
                 Section("Sıfırlama") {
                     Button("Kayıtlı Tüm Müşterileri Sil", role: .destructive) {
                         isShowingDeleteCustomersConfirm = true
