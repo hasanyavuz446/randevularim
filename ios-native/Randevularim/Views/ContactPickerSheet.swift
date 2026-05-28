@@ -56,9 +56,11 @@ struct ContactPickerSheet: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Vazgeç") { dismiss() }
                 }
+                // Aktar butonları alt bara taşındı — searchable aktifken üst toolbar kayboluyor
                 if !contacts.isEmpty && !accessDenied {
-                    ToolbarItemGroup(placement: .topBarTrailing) {
+                    ToolbarItemGroup(placement: .bottomBar) {
                         Button("Herkesi Aktar") { doImport(filteredContacts) }
+                        Spacer()
                         Button(selectedIds.isEmpty ? "Seçilenleri Aktar" : "Aktar (\(selectedIds.count))") {
                             doImport(contacts.filter { selectedIds.contains($0.identifier) })
                         }
@@ -118,6 +120,7 @@ struct ContactPickerSheet: View {
             }
         }
         .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "İsim veya telefon ara")
+        .scrollDismissesKeyboard(.immediately)
         .scrollContentBackground(.hidden)
         .background(AppTheme.background)
     }
