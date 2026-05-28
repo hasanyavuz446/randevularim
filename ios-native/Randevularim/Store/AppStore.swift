@@ -15,7 +15,8 @@ enum SeedDataService {
     static func seedIfNeeded(in context: ModelContext) {
         let businessCount = (try? context.fetchCount(FetchDescriptor<Business>())) ?? 0
         if businessCount == 0 {
-            context.insert(Business.defaultBusiness())
+            let biz = Business(name: "İşletmem")
+            context.insert(biz)
         }
 
         let serviceCount = (try? context.fetchCount(FetchDescriptor<Service>())) ?? 0
@@ -23,7 +24,42 @@ enum SeedDataService {
             Service.defaults.forEach(context.insert)
         }
 
+        #if targetEnvironment(simulator)
+        seedScreenshotDataIfNeeded(in: context)
+        #endif
+
         try? context.save()
+    }
+
+    @MainActor
+    private static func seedScreenshotDataIfNeeded(in context: ModelContext) {
+        let customerCount = (try? context.fetchCount(FetchDescriptor<Customer>())) ?? 0
+        guard customerCount == 0 else { return }
+
+        let c1 = Customer(name: "Samet Can", phone: "05301234567")
+        let c2 = Customer(name: "Vural Toprak", phone: "05319876543")
+        let c3 = Customer(name: "Arzu Vural", phone: "05354445566")
+        [c1, c2, c3].forEach(context.insert)
+
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: .now)
+        func dt(_ hour: Int, _ min: Int, _ dayOffset: Int = 0) -> Date {
+            cal.date(bySettingHour: hour, minute: min, second: 0, of: cal.date(byAdding: .day, value: dayOffset, to: today)!)!
+        }
+
+        let a1 = Appointment(customerId: c1.id, customerName: c1.name, customerPhone: c1.phone,
+                             dateTime: dt(18, 0), durationMinutes: 30, serviceIds: [],
+                             serviceName: "Genel Randevu", serviceColor: "#5856D6",
+                             notes: "", status: .completed, totalPrice: 2000)
+        let a2 = Appointment(customerId: c2.id, customerName: c2.name, customerPhone: c2.phone,
+                             dateTime: dt(20, 30), durationMinutes: 60, serviceIds: [],
+                             serviceName: "Bakım / Uygulama", serviceColor: "#FF9F0A",
+                             notes: "", totalPrice: 1500)
+        let a3 = Appointment(customerId: c3.id, customerName: c3.name, customerPhone: c3.phone,
+                             dateTime: dt(16, 35, 1), durationMinutes: 30, serviceIds: [],
+                             serviceName: "Danışmanlık", serviceColor: "#007AFF",
+                             notes: "", totalPrice: 800)
+        [a1, a2, a3].forEach(context.insert)
     }
 
     @MainActor
