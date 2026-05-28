@@ -18,7 +18,7 @@ import StoreKit
 
     static let monthlyId = "com.hasanyavuz.randevularim.subscription.monthly"
     static let yearlyId  = "com.hasanyavuz.randevularim.subscription.yearly"
-    private static let trialDays = 15
+    private static let trialDays = 14
     private static let firstLaunchKey = "subscription.firstLaunchDate"
 
     // Access is granted while loading (status resolves in <1s) or during trial/subscription.
