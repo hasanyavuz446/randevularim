@@ -102,8 +102,9 @@ struct ContactPickerSheet: View {
                             }
                         }
 
+                        Spacer()
+
                         if alreadyAdded {
-                            Spacer()
                             Text("Eklendi")
                                 .font(.caption.weight(.medium))
                                 .foregroundStyle(AppTheme.success)
