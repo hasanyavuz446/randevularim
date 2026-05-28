@@ -18,8 +18,7 @@ struct SettingsView: View {
     @State private var isShowingExporter = false
     @State private var isShowingImporter = false
     @State private var statusMessage: String?
-    @State private var isShowingContactsAlert = false
-    @State private var isImportingContacts = false
+    @State private var isShowingContactPicker = false
     @State private var isShowingResetConfirm = false
     @State private var isShowingDeleteCustomersConfirm = false
     @State private var isShowingDeletePastAppointmentsConfirm = false
@@ -77,18 +76,9 @@ struct SettingsView: View {
                 }
 
                 Section("Rehber") {
-                    Button {
-                        handleContactImport()
-                    } label: {
-                        HStack {
-                            Text("Rehberden Müşteri Aktar")
-                            if isImportingContacts {
-                                Spacer()
-                                ProgressView()
-                            }
-                        }
+                    Button("Rehberden Müşteri Aktar") {
+                        isShowingContactPicker = true
                     }
-                    .disabled(isImportingContacts)
                 }
 
                 Section("Bildirimler") {
@@ -202,31 +192,10 @@ struct SettingsView: View {
             } message: {
                 Text("Bugünden önceki randevular silinir. Bugünkü ve gelecek randevular korunur. Bu işlem geri alınamaz.")
             }
-            .alert("Rehber Erişimi Gerekli", isPresented: $isShowingContactsAlert) {
-                Button("Ayarları Aç") {
-                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+            .sheet(isPresented: $isShowingContactPicker) {
+                ContactPickerSheet { count in
+                    statusMessage = "\(count) yeni müşteri aktarıldı."
                 }
-                Button("Vazgeç", role: .cancel) {}
-            } message: {
-                Text("Rehbere erişim izni verilmemiş. Ayarlar > Gizlilik > Kişiler bölümünden izin verin.")
-            }
-        }
-    }
-
-    private func handleContactImport() {
-        let status = CNContactStore.authorizationStatus(for: .contacts)
-        if status == .denied || status == .restricted {
-            isShowingContactsAlert = true
-            return
-        }
-        isImportingContacts = true
-        Task {
-            defer { isImportingContacts = false }
-            do {
-                let count = try await ContactImportService.importContacts(into: modelContext)
-                statusMessage = "\(count) müşteri aktarıldı."
-            } catch {
-                statusMessage = "Rehber aktarılamadı: \(error.localizedDescription)"
             }
         }
     }

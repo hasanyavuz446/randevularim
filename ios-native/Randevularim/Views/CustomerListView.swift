@@ -10,6 +10,7 @@ struct CustomerListView: View {
     @State private var isShowingAppointmentForm = false
     @State private var searchText = ""
     @State private var pendingDeletion: Customer?
+    @State private var isShowingContactPicker = false
 
     private var filteredCustomers: [Customer] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -58,15 +59,21 @@ struct CustomerListView: View {
             .background(AppTheme.background)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        isShowingForm = true
-                    } label: {
+                    Button { isShowingContactPicker = true } label: {
+                        Image(systemName: "person.crop.circle.badge.plus")
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { isShowingForm = true } label: {
                         Image(systemName: "plus")
                     }
                 }
             }
             .sheet(isPresented: $isShowingForm) {
                 CustomerFormView()
+            }
+            .sheet(isPresented: $isShowingContactPicker) {
+                ContactPickerSheet()
             }
             .sheet(isPresented: $isShowingAppointmentForm) {
                 AppointmentFormView(preselectedCustomerId: appointmentCustomerId)
