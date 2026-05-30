@@ -584,7 +584,11 @@ struct AppointmentFormView: View {
             appointment.startNotificationEnabled = startNotificationEnabled
             try? modelContext.save()
             NotificationScheduler.schedule(for: appointment)
-            CalendarSyncService.shared.update(appointment)
+            if appointment.status == .cancelled || appointment.status == .noShow {
+                CalendarSyncService.shared.remove(appointment)
+            } else {
+                CalendarSyncService.shared.update(appointment)
+            }
         } else {
             var newAppointments: [Appointment] = []
             for week in 0..<weeklyRepeatCount {

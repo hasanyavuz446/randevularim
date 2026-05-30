@@ -41,6 +41,16 @@ struct CalendarView: View {
         }
     }
 
+    private func syncCalendar() {
+        Task {
+            isSyncing = true
+            let active = appointments.filter { $0.status != .cancelled && $0.status != .noShow }
+            let ok = await calendarSync.syncAll(appointments: active)
+            syncMessage = ok ? "Takvim senkronize edildi." : "Takvim erişimi reddedildi."
+            isSyncing = false
+        }
+    }
+
     var body: some View {
         RandevularimScreen(title: "Takvim") {
             VStack(spacing: 0) {
@@ -64,18 +74,9 @@ struct CalendarView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-        }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 16) {
-                    Button {
-                        Task {
-                            isSyncing = true
-                            let ok = await calendarSync.syncAll(appointments: appointments)
-                            syncMessage = ok ? "Takvim senkronize edildi." : "Takvim erişimi reddedildi."
-                            isSyncing = false
-                        }
-                    } label: {
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: syncCalendar) {
                         if isSyncing {
                             ProgressView().tint(AppTheme.primary)
                         } else {
@@ -83,8 +84,13 @@ struct CalendarView: View {
                         }
                     }
                     .disabled(isSyncing)
-
-                    Button { isShowingForm = true } label: { Image(systemName: "plus") }
+                    .accessibilityLabel(calendarSync.isEnabled ? "Takvimi yeniden senkronize et" : "Takvim senkronizasyonunu başlat")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { isShowingForm = true } label: {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityLabel("Randevu ekle")
                 }
             }
         }

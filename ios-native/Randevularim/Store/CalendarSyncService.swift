@@ -77,8 +77,10 @@ import UIKit
     func remove(_ appointment: Appointment) {
         guard isEnabled else { return }
         var map = eventMap
-        if let ekId = map[appointment.id], let event = store.event(withIdentifier: ekId) {
-            try? store.remove(event, span: .thisEvent)
+        if let ekId = map[appointment.id] {
+            if let event = store.event(withIdentifier: ekId) {
+                try? store.remove(event, span: .thisEvent)
+            }
             map.removeValue(forKey: appointment.id)
         }
         eventMap = map
