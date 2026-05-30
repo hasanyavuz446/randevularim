@@ -54,7 +54,15 @@ struct SettingsView: View {
                     LabeledContent("Ad", value: business.name)
                     LabeledContent("Kategori", value: business.category)
                     LabeledContent("Çalışma saatleri", value: "\(business.openingTime) - \(business.closingTime)")
-                    Button("İşletmeyi Düzenle") { isShowingBusinessForm = true }
+                    Button { isShowingBusinessForm = true } label: {
+                        Label("İşletmeyi Düzenle", systemImage: "pencil")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(AppTheme.primary)
+                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 12, trailing: 16))
                 }
 
                 Section("Hizmetler") {
@@ -96,6 +104,12 @@ struct SettingsView: View {
                         } label: {
                             Label("Varsayılan Hatırlatma", systemImage: "timer")
                         }
+                    }
+                }
+
+                Section("Abonelik") {
+                    Link(destination: URL(string: "https://apps.apple.com/account/subscriptions")!) {
+                        Label("Aboneliği Yönet", systemImage: "creditcard")
                     }
                 }
 
