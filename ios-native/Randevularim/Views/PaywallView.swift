@@ -117,6 +117,7 @@ struct PaywallView: View {
                 .font(.caption)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(AppTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 24)
 
             Button {
