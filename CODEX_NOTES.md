@@ -16,7 +16,7 @@ Bu proje `/Volumes/macprojects/Projects/randevularim` altında duran Flutter tab
 - Flutter iOS deployment target: `16.6`
 - Native SwiftUI iOS deployment target: `17.0`
 - Flutter kaynak sürümü: `1.0.0+9`
-- Native SwiftUI kaynak sürümü: `1.0.0 (13)`
+- Native SwiftUI kaynak sürümü: `1.0.0 (19)`
 - Veritabanı sürümü: `9`
 - Tema/konsept: koyu mor/nightBlue, profesyonel randevu yönetimi
 
@@ -29,6 +29,22 @@ Bu proje `/Volumes/macprojects/Projects/randevularim` altında duran Flutter tab
 - `PrivacyInfo.xcprivacy`, privacy/support dokümanları ve App Store Connect notları eklendi.
 - `file_picker` kaldırıldı, yerine `file_selector` kullanılıyor. Sebep: `file_picker` App Store Connect'te fotoğraf/kamera/konum purpose string hatalarına yol açmıştı.
 - Android desteği eklendi (2026-05-28): APK derlenip GM 9 Pro'da test edildi.
+
+## App Store Review Durumu (2026-05-30)
+
+- **Build 18** → Rejected. Nedenler: 3.1.2(c) EULA/privacy linki eksik; 2.1(b) IAP ürünleri yüklenemedi.
+- **Build 19** → "Ready for Review" olarak gönderildi (2026-05-30).
+- Paid Apps Agreement imzalandı.
+- IAP ürünleri review screenshot dahil tam konfigüre edildi.
+- Apple'a yanıt mesajı + App Review Notes dolduruldu.
+
+**Build 19'da yapılanlar:**
+- Paywall: EULA + gizlilik linkleri, "%33 tasarruf" badge, ₺99,99/₺799,99 fiyatlar, retry butonu, caption fixedSize
+- CalendarSyncService: 3 takvim sync bug'ı düzeltildi
+- SubscriptionManager: `productsLoadFailed` durumu + `retryLoadProducts()`
+- SettingsView: "Aboneliği Yönet" linki eklendi
+- xcodeproj: `SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG` eklendi
+- GitHub Pages: `docs/eula.html` oluşturuldu, `docs/index.html` güncellendi
 
 ## TestFlight Durumu
 
@@ -151,9 +167,13 @@ Flutter komutlarını paralel çalıştırma; startup lock nedeniyle bazen `ios/
 - 2026-05-28: Tema/mod değişiminde bazı view'ların (List satırları, sheet'ler, push'lanmış ekranlar) güncellenmemesi kökten düzeltildi. `AppTheme` static var'ları artık `@Observable final class ThemeValues` singleton'ına yönlendiren computed property. SwiftUI, view body'si çalışırken her `AppTheme.*` erişimini otomatik kayıt altına alır ve değişince o view'ı doğrudan yeniler — eski `themeRevision` / `@AppStorage` hack'i tamamen kaldırıldı. Smoke build, Release archive ve Ad Hoc export geçti; yeni IPA `/private/tmp/RandevularimNativeAdHocExport_20260528_1506/Randevularim.ipa` olarak cihaza yüklendi ve launch edildi.
 
 - 2026-05-28 (bu oturum): Simülatörde App Store ekran görüntüsü için `seedScreenshotDataIfNeeded` eklendi (`#if targetEnvironment(simulator)`). Gerçek cihazda çalışmaz.
-- 2026-05-28 (bu oturum): **StoreKit 2 abonelik sistemi** eklendi. `SubscriptionManager` (@Observable singleton) + `PaywallView`. `ContentView` status `.expired` ise PaywallView gösteriyor. Product ID'ler: `.subscription.monthly` / `.subscription.yearly` (`.pro.*` silindiğinden kullanılamaz). Trial: 14 gün (UserDefaults `subscription.firstLaunchDate`). Build 17 upload edildi, App Store'a "Waiting for Review" durumunda gönderildi.
+- 2026-05-28 (bu oturum): **StoreKit 2 abonelik sistemi** eklendi. `SubscriptionManager` (@Observable singleton) + `PaywallView`. `ContentView` status `.expired` ise PaywallView gösteriyor. Product ID'ler: `.subscription.monthly` / `.subscription.yearly` (`.pro.*` silindiğinden kullanılamaz). Deneme süresi yalnızca App Store introductory offer üzerinden yönetiliyor; local `UserDefaults` trial kaldırıldı. Build 17 upload edildi, App Store'a "Waiting for Review" durumunda gönderildi.
 - 2026-05-28 (bu oturum): **Rehber/Kişi picker** düzeltmeleri: satırın tamamı tıklanabilir hale getirildi (Spacer() ile HStack genişletildi); scroll'da klavye kapanması düzeltildi (`.scrollDismissesKeyboard(.never)`).
 - 2026-05-28 (bu oturum): **iOS Takvim senkronizasyonu** eklendi. `CalendarSyncService` (@Observable singleton, EventKit): ilk senkronizasyonda "Randevularım" adında ayrı takvim oluşturulur, tüm randevular eklenir. Sonraki ekleme/güncelleme/silme otomatik yansır. Takvim ekranında sağ üstte takvim ikonu (sync başlatır), Ayarlar > Takvim bölümünden kaldırılabilir. `NSCalendarsFullAccessUsageDescription` build settings'e eklendi. Cihaza yüklendi.
+- 2026-05-28 (bu oturum): Takvim ekranındaki sync butonunun görünmemesi düzeltildi. Sebep `CalendarView.toolbar` modifier'ının `NavigationStack` oluşturan `RandevularimScreen` dışına uygulanmasıydı; Takvim ekranına sabit özel başlık/aksiyon barı eklendi ve sistem büyük başlık kaydırma bozulması bu sayfada kaldırıldı. Rehberden aktar sheet'inde arama klavyesi dış dokunuş/scroll ile kapanacak hale getirildi.
+- 2026-05-28 (bu oturum): Onboarding 4 sayfaya çıkarıldı. Son sayfa "14 Gün Ücretsiz Deneyin" mesajıyla abonelik/paywall geçişini hazırlar; son buton "Planları Gör" olarak paywall'a geçirir.
+- 2026-05-28 (bu oturum): Lokal cihaz testleri için sadece development/Ad Hoc kurulumlarda abonelik bypass eklendi. Runtime'da `embedded.mobileprovision` varlığı kontrol ediliyor; App Store/TestFlight kurulumlarında erişim abonelik entitlement'ına bağlı kalır.
+- 2026-05-28 (bu oturum): Takvim ekranındaki sync/+ aksiyonları Müşteriler ekranındaki üst kapsül buton grubuyla aynı tasarım diline çekildi. Randevu formundaki durum seçimi kaldırıldı; yeni randevular `Planlandı` açılır, düzenlemede mevcut durum korunur ve durum değişiklikleri detay ekranındaki hızlı işlemlerden yapılır.
 
 ## Native iOS Özellik Durumu (2026-05-28)
 
@@ -174,7 +194,7 @@ Flutter parity + üzeri tamamlandı:
 - **Rehberden aktarma**: İzin durumu kontrolü; reddedildiyse Ayarlar'a deeplink
 - **Demo veri kaldırıldı**: İlk açılışta sahte müşteri/randevu yok; sadece işletme + 6 varsayılan hizmet
 - **Veri sıfırlama**: Ayarlar'da "Tüm Verileri Sıfırla" butonu (onay dialoglu)
-- **Abonelik / Paywall**: StoreKit 2, 14 günlük trial, aylık ₺99 / yıllık ₺799
+- **Abonelik / Paywall**: StoreKit 2, App Store-managed 14 günlük introductory offer, aylık ₺99 / yıllık ₺799
 - **iOS Takvim Sync**: EventKit, "Randevularım" takvimi, otomatik güncelleme
 - **Simülatör ekran görüntüsü seed**: `#if targetEnvironment(simulator)` korumalı örnek veri
 
@@ -191,28 +211,46 @@ Flutter parity + üzeri tamamlandı:
 
 ## Abonelik Sistemi (2026-05-28)
 
-- Model: 14 günlük ücretsiz deneme → aylık ₺99 veya yıllık ₺799
+- Model: App Store-managed 14 günlük ücretsiz deneme → aylık ₺99 veya yıllık ₺799
 - Uygulama kendisi ücretsiz (₺0), abonelik zorunlu deneme bittikten sonra
 - Subscription Group: `Randevularım Pro` (ID: 22119622)
 - Aylık Product ID: `com.hasanyavuz.randevularim.subscription.monthly`
 - Yıllık Product ID: `com.hasanyavuz.randevularim.subscription.yearly`
 - Her ikisinde de 2 Weeks (14 gün) Free introductory offer var
-- `SubscriptionManager` (@Observable singleton): StoreKit 2, trial tracking (UserDefaults `subscription.firstLaunchDate`), purchase/restore
-- `PaywallView`: aylık/yıllık plan seçimi, "15 Gün Ücretsiz Başla" butonu
-- `ContentView`: `status == .expired` ise PaywallView gösterir, loading/trial/subscribed ise MainTabsView
-- Build 17: abonelikler + paywall dahil, App Store'a submit edildi
+- `SubscriptionManager` (@Observable singleton): StoreKit 2 entitlement kontrolü, purchase/restore
+- `PaywallView`: aylık/yıllık plan seçimi, "14 Gün Ücretsiz Başla" butonu
+- `ContentView`: onboarding sonrası `loading` ise yükleme, `subscribed` ise MainTabsView, `expired` ise PaywallView gösterir
+- Build 18: abonelikler + paywall + son UI/UX düzeltmeleri dahil, App Store Review'a submit edildi
 
 **Not:** Silinen product ID'ler Apple'da kalıcı rezerve edilir. `.pro.monthly` ve `.pro.yearly` kullanılamaz.
 
-## Sonraki Olası Adım
+## Güncel Durum / Mola Notu (2026-05-28 22:10 TRT)
 
-Build 17 şu an App Store review'da ("Waiting for Review"). Sonuç bekleniyor.
+- Native iOS build `1.0.0 (18)` App Store Review'a yeniden gönderildi.
+- App Review submission:
+  - Durum: `Waiting for Review`
+  - Build: `1.0.0 (18)`
+  - Submission ID: `44535e7f-0b5a-4d24-8637-f88bd43b9536`
+- Abonelikler App Store Connect'te `Waiting for Review`:
+  - `Randevularım Pro Aylık` / `com.hasanyavuz.randevularim.subscription.monthly`
+  - `Randevularım Pro Yıllık` / `com.hasanyavuz.randevularim.subscription.yearly`
+  - Subscription Group localization (`Turkish`) da `Waiting for Review`
+- TestFlight install sorunu devam ediyor: TestFlight "The requested app is not available or doesn't exist" / "İstenen uygulama kullanılamıyor veya yok" hatası veriyor. Aynı cihazda Ad Hoc kurulum çalışıyor, bu yüzden Apple/TestFlight dağıtım tarafı şüpheli. Apple Developer Support'a case açıldı/açılıyor; önceki case notu: `102901090045`.
+- TestFlight Build 18 App Store Connect'te görünüyor ve internal gruplara (`Internal Testers`, `Test`) ekli; yine de install hatası sürüyor.
+- Son doğrulama: `xcodebuild -project ios-native/Randevularim.xcodeproj -scheme Randevularim -destination 'generic/platform=iOS' -derivedDataPath /private/tmp/randevularim_native_derived CODE_SIGNING_ALLOWED=NO build` başarılı.
+- Plist lint: `PrivacyInfo.xcprivacy`, widget `Info.plist`, upload/ad-hoc export plists OK.
+- App Store upload logları: build 18 upload başarılı, ContentDelivery loglarında errors/warnings boş.
+- Terminal kapatmadan önce tam proje yedeği alındı: `/Volumes/macprojects/Projects/randevularim_backup_20260528_221120`
+- Uncommitted çalışma diff yedeği: `/private/tmp/randevularim_build18_working_changes_20260528_2211.patch`
+- Release açısından not: App onaylanırsa yayınlamadan önce aboneliklerin de `Approved` olduğundan emin olun. App approved ama subscriptions rejected olursa kullanıcı paywall'da kalır ve satın alamaz.
+
+## Sonraki Olası Adım
 
 Kullanıcı birkaç değişiklik daha yaptıktan sonra yeni build isteyebilir. O zaman:
 
 1. Native SwiftUI (`ios-native`) hedefi — Flutter artık ikincil.
-2. Native değişikliği varsa smoke build çalıştır, sonra build numarasını bump et (şu an 17), archive + upload.
-3. App Store Connect'te review'daki submission'ı iptal etmeden yeni build gönderilebilir — Apple en son build'i alır.
+2. Native değişikliği varsa smoke build çalıştır, sonra build numarasını bump et (şu an 18), archive + upload.
+3. App Store Connect'te review'daki submission'a yeni build seçmek için gerekirse review'dan kaldırıp tekrar submit etmek gerekir.
 
 **Native SwiftUI smoke build:**
 ```sh
@@ -241,10 +279,18 @@ xcodebuild -exportArchive -archivePath /private/tmp/RandevularimNative.xcarchive
 
 **Build numarası bump:**
 ```sh
-sed -i '' 's/CURRENT_PROJECT_VERSION = 17;/CURRENT_PROJECT_VERSION = 18;/g' ios-native/Randevularim.xcodeproj/project.pbxproj
+sed -i '' 's/CURRENT_PROJECT_VERSION = 18;/CURRENT_PROJECT_VERSION = 19;/g' ios-native/Randevularim.xcodeproj/project.pbxproj
 ```
 
 TestFlight kurulumu şu an iOS 26.5 kaynaklı Apple altyapı sorunu nedeniyle çalışmıyor (case `102901090045`). Apple yanıtı gelene kadar cihaz testleri Ad Hoc ile yapılmalı.
+
+## 2026-05-28 Son Native Düzeltmeler
+
+- Müşteriler ekranındaki arama klavyesi için dışarı dokunma/scroll ile kapanma eklendi.
+- Randevu ekleme formunda ilk hizmetin otomatik seçilmesi kaldırıldı; hizmet seçmeden kaydetme pasif.
+- Ayarlar > İşletme bölümündeki "İşletmeyi Düzenle" butonu daha belirgin hale getirildi.
+- Varsayılan örnek hizmet fiyatlarına bir sıfır eklendi; mevcut eski varsayılan fiyatlar kullanıcı değiştirmediyse otomatik yükseltilir.
+- Build numarası 18'e çıkarıldı ve App Store Connect/TestFlight'a upload edildi; App Store Review'a yeniden submit edildi.
 
 **Android debug APK:**
 ```sh
