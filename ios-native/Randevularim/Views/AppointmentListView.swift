@@ -270,7 +270,11 @@ struct AppointmentDetailView: View {
     private func persistAppointmentChange() {
         try? modelContext.save()
         NotificationScheduler.schedule(for: appointment)
-        CalendarSyncService.shared.update(appointment)
+        if appointment.status == .cancelled || appointment.status == .noShow {
+            CalendarSyncService.shared.remove(appointment)
+        } else {
+            CalendarSyncService.shared.update(appointment)
+        }
     }
 
     private func reminderLabel(_ minutes: Int) -> String {
@@ -330,7 +334,6 @@ struct AppointmentFormView: View {
     @State private var durationMinutes: Int
     @State private var totalPrice: Double
     @State private var notes: String
-    @State private var status: AppointmentStatus
     @State private var notificationsEnabled: Bool
     @State private var reminderMinutes: Int
     @State private var startNotificationEnabled: Bool
@@ -345,7 +348,6 @@ struct AppointmentFormView: View {
         _durationMinutes = State(initialValue: appointment?.durationMinutes ?? 30)
         _totalPrice = State(initialValue: appointment?.totalPrice ?? 0)
         _notes = State(initialValue: appointment?.notes ?? "")
-        _status = State(initialValue: appointment?.status ?? .scheduled)
         _notificationsEnabled = State(initialValue: appointment?.notificationsEnabled ?? true)
         _reminderMinutes = State(initialValue: appointment?.reminderMinutes ?? 30)
         _startNotificationEnabled = State(initialValue: appointment?.startNotificationEnabled ?? true)
@@ -359,8 +361,7 @@ struct AppointmentFormView: View {
     private var activeServices: [Service] { services.filter(\.isActive) }
 
     private var selectedServices: [Service] {
-        let selected = activeServices.filter { selectedServiceIds.contains($0.id) }
-        return selected.isEmpty ? Array(activeServices.prefix(1)) : selected
+        activeServices.filter { selectedServiceIds.contains($0.id) }
     }
 
     private var hasConflict: Bool {
@@ -499,14 +500,6 @@ struct AppointmentFormView: View {
                         }
                     }
 
-                    Section("Durum") {
-                        Picker("Durum", selection: $status) {
-                            ForEach(AppointmentStatus.allCases) { status in
-                                Text(status.label).tag(status)
-                            }
-                        }
-                    }
-
                     Section("Bildirim") {
                         Toggle("Başlangıç Bildirimi", isOn: $startNotificationEnabled)
                         Toggle("Hatırlatma", isOn: $notificationsEnabled)
@@ -528,15 +521,9 @@ struct AppointmentFormView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Kaydet", action: save)
-                        .disabled(customers.isEmpty || services.isEmpty || selectedCustomer == nil)
+                        .disabled(customers.isEmpty || services.isEmpty || selectedCustomer == nil || selectedServices.isEmpty)
                 }
 
-            }
-            .onAppear {
-                if selectedServiceIds.isEmpty, let first = activeServices.first {
-                    selectedServiceIds = [first.id]
-                    applySelectedServices()
-                }
             }
             .sheet(isPresented: $isShowingCustomerPicker) {
                 CustomerPickerSheet(customers: customers, selectedId: $customerId)
@@ -556,13 +543,17 @@ struct AppointmentFormView: View {
 
     private func applySelectedServices() {
         let selected = selectedServices
-        guard !selected.isEmpty else { return }
+        guard !selected.isEmpty else {
+            durationMinutes = 30
+            totalPrice = 0
+            return
+        }
         durationMinutes = selected.reduce(0) { $0 + $1.durationMinutes }
         totalPrice = selected.reduce(0) { $0 + $1.price }
     }
 
     private func toggleService(_ service: Service) {
-        if selectedServiceIds.contains(service.id), selectedServiceIds.count > 1 {
+        if selectedServiceIds.contains(service.id) {
             selectedServiceIds.remove(service.id)
         } else {
             selectedServiceIds.insert(service.id)
@@ -587,7 +578,6 @@ struct AppointmentFormView: View {
             appointment.serviceName = serviceName
             appointment.serviceColor = serviceColor
             appointment.notes = notes
-            appointment.status = status
             appointment.totalPrice = totalPrice
             appointment.notificationsEnabled = notificationsEnabled
             appointment.reminderMinutes = reminderMinutes
@@ -609,7 +599,7 @@ struct AppointmentFormView: View {
                     serviceName: serviceName,
                     serviceColor: serviceColor,
                     notes: notes,
-                    status: status,
+                    status: .scheduled,
                     totalPrice: totalPrice,
                     notificationsEnabled: notificationsEnabled,
                     reminderMinutes: reminderMinutes,
