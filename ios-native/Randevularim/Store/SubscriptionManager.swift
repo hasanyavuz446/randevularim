@@ -6,7 +6,6 @@ import StoreKit
 
     enum Status: Equatable {
         case loading
-        case trial(daysLeft: Int)
         case subscribed
         case expired
     }
@@ -15,18 +14,13 @@ import StoreKit
     private(set) var products: [Product] = []
     private(set) var isPurchasing = false
     private(set) var purchaseError: String?
+    private(set) var productsLoadFailed = false
 
     static let monthlyId = "com.hasanyavuz.randevularim.subscription.monthly"
     static let yearlyId  = "com.hasanyavuz.randevularim.subscription.yearly"
-    private static let trialDays = 14
-    private static let firstLaunchKey = "subscription.firstLaunchDate"
 
-    // Access is granted while loading (status resolves in <1s) or during trial/subscription.
     var isAccessGranted: Bool {
-        switch status {
-        case .loading, .trial, .subscribed: return true
-        case .expired: return false
-        }
+        status == .subscribed || BuildEnvironment.allowsLocalSubscriptionBypass
     }
 
     var monthlyProduct: Product? { products.first { $0.id == Self.monthlyId } }
@@ -35,7 +29,6 @@ import StoreKit
     private var updateListenerTask: Task<Void, Error>?
 
     private init() {
-        recordFirstLaunchIfNeeded()
         updateListenerTask = listenForTransactions()
     }
 
@@ -48,19 +41,6 @@ import StoreKit
         }
     }
 
-    private func recordFirstLaunchIfNeeded() {
-        guard UserDefaults.standard.object(forKey: Self.firstLaunchKey) == nil else { return }
-        UserDefaults.standard.set(Date.now, forKey: Self.firstLaunchKey)
-    }
-
-    private var trialDaysLeft: Int {
-        guard let first = UserDefaults.standard.object(forKey: Self.firstLaunchKey) as? Date else {
-            return Self.trialDays
-        }
-        let passed = Calendar.current.dateComponents([.day], from: first, to: .now).day ?? 0
-        return max(0, Self.trialDays - passed)
-    }
-
     @MainActor
     func refreshStatus() async {
         for await result in Transaction.currentEntitlements {
@@ -71,8 +51,13 @@ import StoreKit
                 return
             }
         }
-        let daysLeft = trialDaysLeft
-        status = daysLeft > 0 ? .trial(daysLeft: daysLeft) : .expired
+        status = .expired
+    }
+
+    @MainActor
+    func retryLoadProducts() async {
+        productsLoadFailed = false
+        await loadProducts()
     }
 
     private func loadProducts() async {
@@ -80,9 +65,10 @@ import StoreKit
             let fetched = try await Product.products(for: [Self.monthlyId, Self.yearlyId])
             await MainActor.run {
                 products = fetched.sorted { $0.price < $1.price }
+                productsLoadFailed = fetched.isEmpty
             }
         } catch {
-            // Fiyatlar fallback string'lerden gösterilir
+            await MainActor.run { productsLoadFailed = true }
         }
     }
 
@@ -131,5 +117,15 @@ import StoreKit
                 }
             }
         }
+    }
+}
+
+enum BuildEnvironment {
+    static var allowsLocalSubscriptionBypass: Bool {
+        #if DEBUG
+        return true
+        #else
+        return Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision") != nil
+        #endif
     }
 }

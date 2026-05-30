@@ -191,28 +191,45 @@ struct PaywallView: View {
     // MARK: Subscribe Button
 
     private var subscribeButton: some View {
-        Button {
-            Task {
-                guard let product = selectedProduct else { return }
-                await manager.purchase(product)
-            }
-        } label: {
-            HStack {
-                if manager.isPurchasing {
-                    ProgressView().tint(.white)
-                } else if selectedProduct == nil {
-                    ProgressView().tint(.white)
-                } else {
-                    Text("14 Gün Ücretsiz Başla")
-                        .font(.headline)
+        Group {
+            if manager.productsLoadFailed {
+                Button {
+                    Task { await manager.retryLoadProducts() }
+                } label: {
+                    Text("Ürünler Yüklenemedi — Tekrar Dene")
+                        .font(.subheadline.bold())
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(AppTheme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .foregroundStyle(AppTheme.textSecondary)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .strokeBorder(AppTheme.textSecondary.opacity(0.3), lineWidth: 1)
+                        )
                 }
+            } else {
+                Button {
+                    Task {
+                        guard let product = selectedProduct else { return }
+                        await manager.purchase(product)
+                    }
+                } label: {
+                    HStack {
+                        if manager.isPurchasing || selectedProduct == nil {
+                            ProgressView().tint(.white)
+                        } else {
+                            Text("14 Gün Ücretsiz Başla")
+                                .font(.headline)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(AppTheme.primary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .foregroundStyle(.white)
+                }
+                .disabled(manager.isPurchasing || selectedProduct == nil)
             }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(AppTheme.primary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .foregroundStyle(.white)
         }
-        .disabled(manager.isPurchasing || selectedProduct == nil)
         .padding(.horizontal, 20)
     }
 
