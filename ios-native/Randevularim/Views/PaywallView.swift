@@ -145,12 +145,20 @@ struct PaywallView: View {
 
     // MARK: Plan Card
 
+    private var yearlySavingsPercent: Int {
+        let monthly = manager.monthlyProduct.map { NSDecimalNumber(decimal: $0.price).doubleValue } ?? 99.99
+        let yearly  = manager.yearlyProduct.map  { NSDecimalNumber(decimal: $0.price).doubleValue } ?? 799.99
+        let annualMonthly = monthly * 12
+        guard annualMonthly > yearly else { return 0 }
+        return Int((annualMonthly - yearly) / annualMonthly * 100)
+    }
+
     @ViewBuilder
     private func planCard(_ plan: PlanType) -> some View {
         let isSelected = selectedPlan == plan
         let product  = plan == .monthly ? manager.monthlyProduct : manager.yearlyProduct
         let title    = plan == .monthly ? "Aylık" : "Yıllık"
-        let price    = product?.displayPrice ?? (plan == .monthly ? "₺99" : "₺799")
+        let price    = product?.displayPrice ?? (plan == .monthly ? "₺99,99" : "₺799,99")
         let period   = plan == .monthly ? "/ ay" : "/ yıl"
 
         Button { selectedPlan = plan } label: {
@@ -177,6 +185,16 @@ struct PaywallView: View {
                 Text(period)
                     .font(.caption)
                     .foregroundStyle(AppTheme.textSecondary)
+
+                if plan == .yearly {
+                    let pct = yearlySavingsPercent
+                    Text("%\(pct) tasarruf")
+                        .font(.caption2.bold())
+                        .foregroundStyle(AppTheme.success)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(AppTheme.success.opacity(0.15), in: Capsule())
+                }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
