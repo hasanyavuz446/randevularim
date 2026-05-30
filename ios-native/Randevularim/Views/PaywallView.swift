@@ -100,16 +100,20 @@ struct PaywallView: View {
             Divider()
                 .background(AppTheme.divider)
 
+            Text("Randevularım Pro")
+                .font(.footnote.bold())
+                .foregroundStyle(AppTheme.textSecondary)
+                .padding(.top, 4)
+
             HStack(spacing: 12) {
                 planCard(.monthly)
                 planCard(.yearly)
             }
             .padding(.horizontal, 20)
-            .padding(.top, 8)
 
             subscribeButton
 
-            Text("Deneme sonrası otomatik ücretlendirme başlar. İstediğiniz zaman App Store üzerinden iptal edebilirsiniz.")
+            Text("14 günlük ücretsiz deneme sonrası seçilen plan üzerinden otomatik ücretlendirme başlar. İstediğiniz zaman App Store üzerinden iptal edebilirsiniz.")
                 .font(.caption)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(AppTheme.textSecondary)
