@@ -10,6 +10,10 @@ struct PaywallView: View {
 
     enum PlanType { case monthly, yearly }
 
+    private var selectedProduct: Product? {
+        selectedPlan == .monthly ? manager.monthlyProduct : manager.yearlyProduct
+    }
+
     private let features: [(String, String)] = [
         ("person.2.fill",           "Sınırsız müşteri ve randevu"),
         ("bell.badge.fill",         "Akıllı hatırlatma bildirimleri"),
@@ -59,7 +63,7 @@ struct PaywallView: View {
                 .font(.largeTitle.bold())
                 .foregroundStyle(AppTheme.textPrimary)
 
-            Text("15 gün ücretsiz deneyin, sonra dilediğiniz zaman iptal edin.")
+            Text("14 gün ücretsiz deneyin, sonra dilediğiniz zaman iptal edin.")
                 .font(.subheadline)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(AppTheme.textSecondary)
@@ -119,6 +123,17 @@ struct PaywallView: View {
                     .foregroundStyle(AppTheme.textSecondary)
             }
             .disabled(manager.isPurchasing)
+
+            HStack(spacing: 8) {
+                Link("Gizlilik Politikası",
+                     destination: URL(string: "https://hasanyavuz446.github.io/randevularim/privacy.html")!)
+                Text("·")
+                    .foregroundStyle(AppTheme.textSecondary)
+                Link("Kullanım Koşulları",
+                     destination: URL(string: "https://hasanyavuz446.github.io/randevularim/eula.html")!)
+            }
+            .font(.caption2)
+            .foregroundStyle(AppTheme.primary)
             .padding(.bottom, 32)
         }
         .background(AppTheme.background)
@@ -174,16 +189,17 @@ struct PaywallView: View {
     private var subscribeButton: some View {
         Button {
             Task {
-                let product = selectedPlan == .monthly ? manager.monthlyProduct : manager.yearlyProduct
-                guard let product else { return }
+                guard let product = selectedProduct else { return }
                 await manager.purchase(product)
             }
         } label: {
             HStack {
                 if manager.isPurchasing {
                     ProgressView().tint(.white)
+                } else if selectedProduct == nil {
+                    ProgressView().tint(.white)
                 } else {
-                    Text("15 Gün Ücretsiz Başla")
+                    Text("14 Gün Ücretsiz Başla")
                         .font(.headline)
                 }
             }
@@ -192,7 +208,7 @@ struct PaywallView: View {
             .background(AppTheme.primary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .foregroundStyle(.white)
         }
-        .disabled(manager.isPurchasing)
+        .disabled(manager.isPurchasing || selectedProduct == nil)
         .padding(.horizontal, 20)
     }
 
